@@ -8,6 +8,7 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Formik } from "formik";
@@ -15,6 +16,8 @@ import * as yup from "yup";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { auth } from "../../firebase"; // Import your Firebase config
 import { signInWithEmailAndPassword } from "firebase/auth";
+import * as AppleAuthentication from "expo-apple-authentication";
+import { useAuthRequest } from "expo-auth-session";
 
 //Components
 import Screen from "../components/Screen";
@@ -56,6 +59,39 @@ export default function LoginScreen(props) {
     } catch (error) {
       setLoading(false);
       Alert.alert("Login Failed", "Please check your email and password.");
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    try {
+      if (Platform.OS === "ios") {
+        const credential = await AppleAuthentication.signInAsync({
+          requestedScopes: [
+            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+            AppleAuthentication.AppleAuthenticationScope.EMAIL,
+          ],
+        });
+
+        // Handle successful authentication
+        Alert.alert("Success", `Welcome, ${credential.fullName?.givenName}!`);
+
+        console.log("Apple Credential:", credential);
+
+        // Example: Send credential.identityToken to your backend
+        // to verify the user and create a session
+      } else {
+        Alert.alert("Error", "Apple Sign-In is only available on iOS devices.");
+      }
+    } catch (error) {
+      if (error.code === "ERR_CANCELED") {
+        Alert.alert("Cancelled", "Sign-In was cancelled.");
+      } else {
+        console.error("Apple Sign-In Error:", error);
+        Alert.alert(
+          "Error",
+          "An error occurred during Sign-In. Please try again."
+        );
+      }
     }
   };
 
@@ -236,7 +272,7 @@ export default function LoginScreen(props) {
         />
       </View>
       {/* authetication by google apple fb */}
-      <View style={styles.appfbgcontainer}>
+      <TouchableOpacity activeOpacity={0.7} style={styles.appfbgcontainer}>
         <Image style={styles.fbglogo} source={icons.googlelogo} />
         <Text
           style={{
@@ -247,8 +283,12 @@ export default function LoginScreen(props) {
         >
           Sign in with Google
         </Text>
-      </View>
-      <View style={[styles.appfbgcontainer, { paddingLeft: RFPercentage(2) }]}>
+      </TouchableOpacity>
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={handleAppleSignIn}
+        style={[styles.appfbgcontainer, { paddingLeft: RFPercentage(2) }]}
+      >
         <Image style={styles.fbglogo} source={icons.appleg} />
         <Text
           style={{
@@ -259,7 +299,7 @@ export default function LoginScreen(props) {
         >
           Sign in with Apple ID
         </Text>
-      </View>
+      </TouchableOpacity>
 
       {/* Signup */}
       <View

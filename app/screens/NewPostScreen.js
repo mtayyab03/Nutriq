@@ -16,7 +16,12 @@ import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { db, storage } from "../../firebase"; // Assuming db is your Firestore instance
 import { collection, addDoc } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import {
+  ref,
+  uploadBytesResumable,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
 
 //Components
 import Screen from "../components/Screen";
@@ -112,7 +117,7 @@ const NewPostScreen = ({ navigation }) => {
       Alert.alert("Please add an image and write a caption.");
       return;
     }
-
+    setIsLoading(true);
     try {
       // Upload images to Firebase Storage and get URLs
       const imageUrls = [];
@@ -176,6 +181,9 @@ const NewPostScreen = ({ navigation }) => {
         "Error",
         "There was an issue submitting your post. Please try again."
       );
+      setIsLoading(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -366,7 +374,11 @@ const NewPostScreen = ({ navigation }) => {
         style={styles.loginbutton}
         activeOpacity={0.8}
       >
-        <AppButton title="Submit" buttonColor={Colors.primary} />
+        <AppButton
+          title="Submit"
+          buttonColor={Colors.primary}
+          loading={isLoading}
+        />
       </TouchableOpacity>
 
       {/* Modal */}

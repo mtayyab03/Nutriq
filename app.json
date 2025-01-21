@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "RawE",
-    "slug": "RawE",
+    "slug": "rawE",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -12,6 +12,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
+      "bundleIdentifier": "com.tayyabgondal.rawE",
+      "config": {
+        "usesAppleSignIn": true
+      },
       "supportsTablet": true
     },
     "android": {
@@ -22,6 +26,7 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": ["expo-apple-authentication"]
   }
 }
