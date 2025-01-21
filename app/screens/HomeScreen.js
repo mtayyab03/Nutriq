@@ -19,6 +19,9 @@ import {
   Fontisto,
   MaterialIcons,
 } from "@expo/vector-icons";
+import { db, storage } from "../../firebase"; // Assuming db is your Firestore instance
+import { collection, getDocs, onSnapshot } from "firebase/firestore";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 //Components
 import Screen from "../components/Screen";
@@ -29,6 +32,7 @@ import Colors from "../config/Colors";
 import { FontFamily } from "../config/font";
 
 const HomeScreen = ({ navigation }) => {
+  const [cards, setCards] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("Select Category");
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0); // For dot indicator
@@ -40,37 +44,18 @@ const HomeScreen = ({ navigation }) => {
 
   const categories = ["Raw Material", "Machine"];
 
-  const cards = [
-    {
-      id: 1,
-      mediaSource: [
-        require("../../assets/images/gold.png"), // Replace with your local or remote images
-        require("../../assets/images/rice.png"),
-      ],
-      mediaType: "image", // Specify media type
-      name: "Darrel Halland",
-      profile: icons.profile4,
-      title: "Gold Raw Material",
-      price: "250$",
-      category: "Raw Material",
-      subCategory: "Leather",
-      caption:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus viverra nunc vitae tellus dapibus, nec aliquam nisl sollicitudin.Curabitur sit amet justo lorem.",
-    },
-    {
-      id: 2,
-      mediaSource: [require("../../assets/images/rice.png")],
-      mediaType: "image", // Specify media type
-      name: "Nicolas Kimmer",
-      profile: icons.profile1,
-      title: "Rice Raw Material",
-      category: "machine",
-      subCategory: "Fabric",
-      price: "250$",
-      caption:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus viverra nunc vitae tellus dapibus, nec aliquam nisl sollicitudin.Curabitur sit amet justo lorem.",
-    },
-  ];
+  // Fetch data from Firestore
+  useEffect(() => {
+    const postsCollection = collection(db, "posts");
+    const unsubscribe = onSnapshot(postsCollection, (querySnapshot) => {
+      const fetchedPosts = querySnapshot.docs.map((doc) => doc.data());
+      setCards(fetchedPosts);
+      console.log("Fetch data", cards);
+    });
+
+    return () => unsubscribe(); // Cleanup listener on unmount
+  }, []);
+
   const filteredCards =
     selectedCategory === "Select Category"
       ? cards
@@ -247,7 +232,7 @@ const HomeScreen = ({ navigation }) => {
                     height: RFPercentage(4),
                     borderRadius: RFPercentage(3),
                   }}
-                  source={item.profile}
+                  source={icons.profile1}
                 />
 
                 <Text
@@ -258,7 +243,7 @@ const HomeScreen = ({ navigation }) => {
                     marginLeft: RFPercentage(1.5),
                   }}
                 >
-                  {item.name}
+                  Anna Marie
                 </Text>
               </View>
 
@@ -270,12 +255,11 @@ const HomeScreen = ({ navigation }) => {
             </View>
 
             {/* image */}
-            {/* Check if multiple images */}
-            {item.mediaSource.length > 1 ? (
+            {item.images.length > 1 ? (
               <>
                 {/* Swiper */}
                 <FlatList
-                  data={item.mediaSource}
+                  data={item.images}
                   horizontal
                   pagingEnabled
                   showsHorizontalScrollIndicator={false}
@@ -284,14 +268,14 @@ const HomeScreen = ({ navigation }) => {
                     <Image
                       key={index}
                       style={styles.mediaImage}
-                      source={media}
+                      source={{ uri: media }}
                     />
                   )}
                 />
 
                 {/* Dot Indicator */}
                 <View style={styles.dotsContainer}>
-                  {item.mediaSource.map((_, index) => (
+                  {item.images.map((_, index) => (
                     <View
                       key={index}
                       style={[
@@ -304,16 +288,11 @@ const HomeScreen = ({ navigation }) => {
               </>
             ) : (
               // Single image
-              <Image style={styles.mediaImage} source={item.mediaSource[0]} />
+              <Image
+                style={styles.mediaImage}
+                source={{ uri: item.images[0] }}
+              />
             )}
-
-            {/* <Image
-              style={{
-                width: "100%",
-                height: RFPercentage(42),
-              }}
-              source={item.mediaSource}
-            /> */}
 
             {/* like comment section */}
             <View

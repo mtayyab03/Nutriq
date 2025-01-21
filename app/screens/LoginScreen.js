@@ -13,10 +13,11 @@ import { RFPercentage } from "react-native-responsive-fontsize";
 import { Formik } from "formik";
 import * as yup from "yup";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { auth } from "../../firebase"; // Import your Firebase config
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 //Components
 import Screen from "../components/Screen";
-import AppButton from "../components/AppButton";
 
 //config
 import icons from "../config/icons";
@@ -42,18 +43,16 @@ export default function LoginScreen(props) {
       .label("Password"),
   });
 
-  // Handle login function
   const handleLogin = async (values) => {
     setLoading(true);
     try {
       const { email, password } = values;
 
-      // Simulate API call (you can integrate your real API here)
-      setTimeout(() => {
-        setLoading(false);
-        // Navigate to BottomTab screen on success
-        props.navigation.navigate("BottomTab", { screen: "HomeScreen" });
-      }, 2000);
+      // Firebase Authentication sign-in
+      await signInWithEmailAndPassword(auth, email, password);
+
+      // Navigate to BottomTab screen on success
+      props.navigation.navigate("BottomTab", { screen: "HomeScreen" });
     } catch (error) {
       setLoading(false);
       Alert.alert("Login Failed", "Please check your email and password.");

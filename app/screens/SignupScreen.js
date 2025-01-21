@@ -16,6 +16,9 @@ import { RFPercentage } from "react-native-responsive-fontsize";
 import { Formik } from "formik";
 import * as yup from "yup";
 import { MaterialCommunityIcons, FontAwesome } from "@expo/vector-icons";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../../firebase"; // Import auth and db from firebase.js
 
 //Components
 import Screen from "../components/Screen";
@@ -58,20 +61,39 @@ const SignupScreen = (props) => {
   const handleSignup = async (values) => {
     setLoading(true);
 
-    // Check if the image is uploaded
+    const { email, password, fullName, phoneNumber } = values;
 
     try {
-      const { email, password } = values;
+      // Create user with Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-      // Simulate API call (you can integrate your real API here)
-      setTimeout(() => {
-        setLoading(false);
-        // Navigate to BottomTab screen on success
-        props.navigation.navigate("LoginScreen");
-      }, 2000);
+      // Get user ID
+      const userId = userCredential.user.uid;
+
+      // Save additional user information in Firestore
+      await setDoc(doc(db, "users", userId), {
+        fullName,
+        email,
+        phoneNumber,
+        city,
+        state,
+        createdAt: new Date().toISOString(),
+      });
+
+      setLoading(false);
+
+      // Navigate to the LoginScreen on success
+      Alert.alert("Signup Success");
+      props.navigation.navigate("LoginScreen");
     } catch (error) {
       setLoading(false);
-      Alert.alert("Signup Failed", "Please check your details.");
+
+      // Display error
+      Alert.alert("Signup Failed", error.message || "Something went wrong!");
     }
   };
 
@@ -102,6 +124,8 @@ const SignupScreen = (props) => {
           password: "",
           fullName: "",
           phoneNumber: "",
+          city: "",
+          state: "",
         }}
         onSubmit={handleSignup}
         validationSchema={validationSchema}

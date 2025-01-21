@@ -30,7 +30,7 @@ export default function SplashScreen(props) {
             color: Colors.white,
           }}
         >
-          App Logo
+          RawE
         </Text>
       </TouchableOpacity>
     </View>

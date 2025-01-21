@@ -14,6 +14,9 @@ import {
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { db, storage } from "../../firebase"; // Assuming db is your Firestore instance
+import { collection, addDoc } from "firebase/firestore";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 //Components
 import Screen from "../components/Screen";
@@ -25,6 +28,7 @@ import Colors from "../config/Colors";
 import { FontFamily } from "../config/font";
 
 const NewPostScreen = ({ navigation }) => {
+  const [isLoading, setIsLoading] = useState(false); // Loading state
   const [caption, setCaption] = useState("");
   const [title, setTitle] = useState("");
   const [purchase, onChangePurchase] = useState("");
@@ -103,25 +107,76 @@ const NewPostScreen = ({ navigation }) => {
     setImages((prevImages) => prevImages.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = () => {
-    if (!selectedMedia || caption.trim() === "") {
+  const handleSubmit = async () => {
+    if (!images || caption.trim() === "") {
       Alert.alert("Please add an image and write a caption.");
       return;
     }
 
-    // If both media and caption are provided, show success alert and go back
-    Alert.alert("Success!", "Your post has been submitted successfully.", [
-      {
-        text: "OK",
-        onPress: () => {
-          // Clear the caption and selected media
-          setCaption("");
-          setMediaType("");
-          setSelectedMedia(null);
-          navigation.goBack(); // Navigate back when OK is pressed
+    try {
+      // Upload images to Firebase Storage and get URLs
+      const imageUrls = [];
+
+      for (let i = 0; i < images.length; i++) {
+        const imageUri = images[i];
+        const response = await fetch(imageUri);
+        const blob = await response.blob();
+        const storageRef = ref(storage, `images/${Date.now()}.jpg`);
+        const uploadTask = uploadBytesResumable(storageRef, blob);
+
+        // Wait for image upload to complete
+        await uploadTask;
+
+        // Get the download URL for the uploaded image
+        const imageUrl = await getDownloadURL(storageRef);
+        imageUrls.push(imageUrl);
+      }
+
+      // Store the data in Firestore (db in your case)
+      const newPost = {
+        title,
+        caption,
+        purchaseDate: purchase,
+        expiryDate: expiry,
+        price,
+        quantity: quatity,
+        make,
+        model,
+        category: selectedCategory,
+        subCategory: SubCategory,
+        images: imageUrls, // Store the image URLs
+        timestamp: new Date(),
+      };
+
+      await addDoc(collection(db, "posts"), newPost); // Use `db` here
+
+      // Clear the form and show success message
+      setCaption("");
+      setTitle("");
+      onChangePurchase("");
+      onChangeExpiry("");
+      onChangePrice("");
+      onChangeQuantity("");
+      onChangeMake("");
+      onChangeModel("");
+      setImages([]);
+      setSelectedCategory("Category");
+      setSubCategory("Sub Category");
+
+      Alert.alert("Success!", "Your post has been submitted successfully.", [
+        {
+          text: "OK",
+          onPress: () => {
+            navigation.goBack(); // Navigate back
+          },
         },
-      },
-    ]);
+      ]);
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        "There was an issue submitting your post. Please try again."
+      );
+    }
   };
 
   return (
