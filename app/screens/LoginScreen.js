@@ -17,7 +17,6 @@ import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityI
 import { auth } from "../../firebase"; // Import your Firebase config
 import { signInWithEmailAndPassword } from "firebase/auth";
 import * as AppleAuthentication from "expo-apple-authentication";
-import { useAuthRequest } from "expo-auth-session";
 
 //Components
 import Screen from "../components/Screen";
