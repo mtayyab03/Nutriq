@@ -15,9 +15,14 @@ import { Formik } from "formik";
 import * as yup from "yup";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { auth } from "../../firebase"; // Import your Firebase config
-import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  signInWithCredential,
+  GoogleAuthProvider,
+} from "firebase/auth";
 import * as AppleAuthentication from "expo-apple-authentication";
-
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import * as WebBrowser from "expo-web-browser";
 //Components
 import Screen from "../components/Screen";
 
@@ -26,9 +31,10 @@ import icons from "../config/icons";
 import Colors from "../config/Colors";
 import { FontFamily } from "../config/font";
 
+WebBrowser.maybeCompleteAuthSession();
+
 export default function LoginScreen(props) {
   const [eyeIcon, setEyeIcon] = useState(false);
-
   const [loading, setLoading] = useState(false); // Add loading state
 
   // Validation schema for email and password
@@ -61,6 +67,34 @@ export default function LoginScreen(props) {
     }
   };
 
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId:
+        "334025525194-5ci7gb60hmi1j7uf66c5rsdmt8nk6m1n.apps.googleusercontent.com", // From Firebase
+      offlineAccess: true, // if you need server-side access
+    });
+  }, []);
+
+  const signIn = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      console.log("Google Sign-In Successful", userInfo);
+      // ✅ Create Google credential
+      const googleCredential = GoogleAuthProvider.credential(
+        userInfo.data.idToken
+      );
+
+      // ✅ Sign in to Firebase with the Google credential
+      await signInWithCredential(auth, googleCredential);
+      props.navigation.navigate("BottomTab", { screen: "HomeScreen" });
+
+      console.log("Google Sign-In Successful", userInfo.data.idToken);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const handleAppleSignIn = async () => {
     try {
       if (Platform.OS === "ios") {
@@ -77,7 +111,6 @@ export default function LoginScreen(props) {
         console.log("Apple Credential:", credential);
 
         // Example: Send credential.identityToken to your backend
-        // to verify the user and create a session
       } else {
         Alert.alert("Error", "Apple Sign-In is only available on iOS devices.");
       }
@@ -271,7 +304,11 @@ export default function LoginScreen(props) {
         />
       </View>
       {/* authetication by google apple fb */}
-      <TouchableOpacity activeOpacity={0.7} style={styles.appfbgcontainer}>
+      <TouchableOpacity
+        activeOpacity={0.7}
+        style={styles.appfbgcontainer}
+        onPress={signIn}
+      >
         <Image style={styles.fbglogo} source={icons.googlelogo} />
         <Text
           style={{

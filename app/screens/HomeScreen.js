@@ -85,6 +85,7 @@ const HomeScreen = ({ navigation }) => {
           width: "90%",
           alignItems: "center",
           justifyContent: "space-between",
+          marginTop: RFPercentage(2),
         }}
       >
         <Text
@@ -428,7 +429,7 @@ const styles = StyleSheet.create({
   // flatlist swiper
 
   mediaImage: {
-    width: RFPercentage(45.5),
+    width: RFPercentage(51),
     height: RFPercentage(40),
   },
   dotsContainer: {

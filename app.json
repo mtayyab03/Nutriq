@@ -13,20 +13,39 @@
     },
     "ios": {
       "bundleIdentifier": "com.tayyabgondal.rawE",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "config": {
-        "usesAppleSignIn": true
+        "usesAppleSignIn": true,
+        "googleSignIn": {
+          "reservedClientId": "334025525194-5ci7gb60hmi1j7uf66c5rsdmt8nk6m1n.apps.googleusercontent.com"
+        }
       },
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "REASON_FOR_REQUEST"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "config": {
+        "googleSignIn": {
+          "certificateHash": "99:3a:57:aa:d2:74:ca:10:94:7e:f0:ee:da:84:db:32:37:08:18:02"
+        }
+      },
+      "package": "com.tayyabgondal.rawE",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-apple-authentication"]
+    "plugins": ["expo-apple-authentication"],
+    "extra": {
+      "eas": {
+        "projectId": "b5a45921-6cd1-4162-9ba3-78d1973ddee8"
+      }
+    }
   }
 }

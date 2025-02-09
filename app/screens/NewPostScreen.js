@@ -195,6 +195,7 @@ const NewPostScreen = ({ navigation }) => {
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "center",
+          marginTop: RFPercentage(2),
         }}
       >
         <TouchableOpacity
