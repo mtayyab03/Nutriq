@@ -19,6 +19,7 @@ import {
   signInWithEmailAndPassword,
   signInWithCredential,
   GoogleAuthProvider,
+  OAuthProvider,
 } from "firebase/auth";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
@@ -103,12 +104,29 @@ export default function LoginScreen(props) {
             AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
             AppleAuthentication.AppleAuthenticationScope.EMAIL,
           ],
+          audience: "com.tayyabgondal.rawE",
         });
 
-        // Handle successful authentication
-        Alert.alert("Success", `Welcome, ${credential.fullName?.givenName}!`);
-
         console.log("Apple Credential:", credential);
+
+        if (!credential.identityToken) {
+          Alert.alert("Sign-In Failed", "No identity token received.");
+          return;
+        }
+
+        // Create Firebase credential with the Apple identity token
+        const appleProvider = new OAuthProvider("apple.com");
+        const firebaseCredential = appleProvider.credential({
+          idToken: credential.identityToken,
+        });
+
+        // Sign in with Firebase
+        await signInWithCredential(auth, firebaseCredential);
+
+        // Navigate to HomeScreen on success
+        props.navigation.navigate("BottomTab", { screen: "HomeScreen" });
+
+        Alert.alert("Success", `Welcome, ${credential.fullName?.givenName}!`);
 
         // Example: Send credential.identityToken to your backend
       } else {
