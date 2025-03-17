@@ -4,6 +4,7 @@ import { RFPercentage } from "react-native-responsive-fontsize";
 //config
 import Colors from "../config/Colors";
 import { FontFamily } from "../config/font";
+import icons from "../config/icons";
 
 export default function SplashScreen(props) {
   useEffect(() => {
@@ -23,15 +24,10 @@ export default function SplashScreen(props) {
           props.navigation.navigate("LoginScreen");
         }}
       >
-        <Text
-          style={{
-            fontFamily: FontFamily.medium,
-            fontSize: RFPercentage(3.4),
-            color: Colors.white,
-          }}
-        >
-          RawE
-        </Text>
+        <Image
+          style={{ width: RFPercentage(30), height: RFPercentage(30) }}
+          source={icons.nutriqlogo}
+        />
       </TouchableOpacity>
     </View>
   );
@@ -40,7 +36,7 @@ export default function SplashScreen(props) {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    backgroundColor: Colors.blacky,
+    backgroundColor: Colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },

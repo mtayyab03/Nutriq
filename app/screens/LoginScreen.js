@@ -13,17 +13,8 @@ import {
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Formik } from "formik";
 import * as yup from "yup";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { auth } from "../../firebase"; // Import your Firebase config
-import {
-  signInWithEmailAndPassword,
-  signInWithCredential,
-  GoogleAuthProvider,
-  OAuthProvider,
-} from "firebase/auth";
-import * as AppleAuthentication from "expo-apple-authentication";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import * as WebBrowser from "expo-web-browser";
+import { Ionicons, Fontisto, MaterialCommunityIcons } from "@expo/vector-icons";
+
 //Components
 import Screen from "../components/Screen";
 
@@ -31,8 +22,6 @@ import Screen from "../components/Screen";
 import icons from "../config/icons";
 import Colors from "../config/Colors";
 import { FontFamily } from "../config/font";
-
-WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen(props) {
   const [eyeIcon, setEyeIcon] = useState(false);
@@ -55,11 +44,6 @@ export default function LoginScreen(props) {
   const handleLogin = async (values) => {
     setLoading(true);
     try {
-      const { email, password } = values;
-
-      // Firebase Authentication sign-in
-      await signInWithEmailAndPassword(auth, email, password);
-
       // Navigate to BottomTab screen on success
       props.navigation.navigate("BottomTab", { screen: "HomeScreen" });
     } catch (error) {
@@ -68,95 +52,13 @@ export default function LoginScreen(props) {
     }
   };
 
-  useEffect(() => {
-    GoogleSignin.configure({
-      webClientId:
-        "334025525194-5ci7gb60hmi1j7uf66c5rsdmt8nk6m1n.apps.googleusercontent.com", // From Firebase
-      offlineAccess: true, // if you need server-side access
-    });
-  }, []);
-
-  const signIn = async () => {
-    try {
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      console.log("Google Sign-In Successful", userInfo);
-      // ✅ Create Google credential
-      const googleCredential = GoogleAuthProvider.credential(
-        userInfo.data.idToken
-      );
-
-      // ✅ Sign in to Firebase with the Google credential
-      await signInWithCredential(auth, googleCredential);
-      props.navigation.navigate("BottomTab", { screen: "HomeScreen" });
-
-      console.log("Google Sign-In Successful", userInfo.data.idToken);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleAppleSignIn = async () => {
-    try {
-      if (Platform.OS === "ios") {
-        const credential = await AppleAuthentication.signInAsync({
-          requestedScopes: [
-            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-            AppleAuthentication.AppleAuthenticationScope.EMAIL,
-          ],
-          audience: "com.tayyabgondal.rawE",
-        });
-
-        console.log("Apple Credential:", credential);
-
-        if (!credential.identityToken) {
-          Alert.alert("Sign-In Failed", "No identity token received.");
-          return;
-        }
-
-        // Create Firebase credential with the Apple identity token
-        const appleProvider = new OAuthProvider("apple.com");
-        const firebaseCredential = appleProvider.credential({
-          idToken: credential.identityToken,
-        });
-
-        // Sign in with Firebase
-        await signInWithCredential(auth, firebaseCredential);
-
-        // Navigate to HomeScreen on success
-        props.navigation.navigate("BottomTab", { screen: "HomeScreen" });
-
-        Alert.alert("Success", `Welcome, ${credential.fullName?.givenName}!`);
-
-        // Example: Send credential.identityToken to your backend
-      } else {
-        Alert.alert("Error", "Apple Sign-In is only available on iOS devices.");
-      }
-    } catch (error) {
-      if (error.code === "ERR_CANCELED") {
-        Alert.alert("Cancelled", "Sign-In was cancelled.");
-      } else {
-        console.error("Apple Sign-In Error:", error);
-        Alert.alert(
-          "Error",
-          "An error occurred during Sign-In. Please try again."
-        );
-      }
-    }
-  };
-
   return (
     <Screen style={styles.screen}>
       <View style={styles.logocontainer}>
-        <Text
-          style={{
-            fontFamily: FontFamily.medium,
-            fontSize: RFPercentage(3.5),
-            color: Colors.white,
-          }}
-        >
-          RawE
-        </Text>
+        <Image
+          style={{ width: RFPercentage(15.2), height: RFPercentage(12) }}
+          source={icons.nutriqwhite}
+        />
       </View>
 
       {/* login text */}
@@ -189,6 +91,12 @@ export default function LoginScreen(props) {
           <>
             <View style={styles.inputmaincontainer}>
               <View style={styles.emailmain}>
+                <Ionicons
+                  color={Colors.blacksuit}
+                  style={{ marginRight: RFPercentage(2) }}
+                  size={RFPercentage(3)}
+                  name={"mail"}
+                />
                 <TextInput
                   style={styles.input}
                   keyboardType="email-address"
@@ -197,7 +105,7 @@ export default function LoginScreen(props) {
                   autoCapitalize="none"
                   // value={text}
                   placeholder="Email Address"
-                  placeholderTextColor={Colors.placeholder}
+                  placeholderTextColor={Colors.lightBlack}
                 />
               </View>
               {touched.email && errors.email && (
@@ -207,13 +115,19 @@ export default function LoginScreen(props) {
               )}
               <View style={{ marginTop: RFPercentage(2) }} />
               <View style={styles.emailmain}>
+                <Fontisto
+                  color={Colors.blacksuit}
+                  style={{ marginRight: RFPercentage(2) }}
+                  size={RFPercentage(3)}
+                  name={"locked"}
+                />
                 <TextInput
                   style={styles.input}
                   onChangeText={handleChange("password")}
                   onBlur={() => setFieldTouched("password")}
                   // value={Password}
                   placeholder="Password"
-                  placeholderTextColor={Colors.placeholder}
+                  placeholderTextColor={Colors.lightBlack}
                   secureTextEntry={true && !eyeIcon}
                 />
 
@@ -223,7 +137,7 @@ export default function LoginScreen(props) {
                   style={styles.eyeicon}
                 >
                   <MaterialCommunityIcons
-                    color={Colors.lightWhite}
+                    color={Colors.lightBlack}
                     style={{ right: RFPercentage(1) }}
                     size={RFPercentage(3)}
                     name={eyeIcon ? "eye-outline" : "eye-off-outline"}
@@ -278,86 +192,6 @@ export default function LoginScreen(props) {
 
       <View
         style={{
-          width: "90%",
-          flexDirection: "row",
-          marginTop: RFPercentage(3),
-        }}
-      >
-        <View
-          style={{
-            width: "46%",
-            marginTop: RFPercentage(1),
-            height: RFPercentage(0.06),
-            backgroundColor: Colors.lightWhite,
-            borderRadius: RFPercentage(0.5),
-          }}
-        />
-        <View
-          style={{
-            width: "8%",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text
-            style={{
-              color: Colors.white,
-              fontFamily: FontFamily.regular,
-              fontSize: RFPercentage(1.5),
-            }}
-          >
-            or
-          </Text>
-        </View>
-
-        <View
-          style={{
-            width: "46%",
-
-            marginTop: RFPercentage(1),
-            height: RFPercentage(0.06),
-            backgroundColor: Colors.lightWhite,
-            borderRadius: RFPercentage(0.5),
-          }}
-        />
-      </View>
-      {/* authetication by google apple fb */}
-      <TouchableOpacity
-        activeOpacity={0.7}
-        style={styles.appfbgcontainer}
-        onPress={signIn}
-      >
-        <Image style={styles.fbglogo} source={icons.googlelogo} />
-        <Text
-          style={{
-            color: Colors.white,
-            fontFamily: FontFamily.regular,
-            fontSize: RFPercentage(1.8),
-          }}
-        >
-          Sign in with Google
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={handleAppleSignIn}
-        style={[styles.appfbgcontainer, { paddingLeft: RFPercentage(2) }]}
-      >
-        <Image style={styles.fbglogo} source={icons.appleg} />
-        <Text
-          style={{
-            color: Colors.white,
-            fontFamily: FontFamily.regular,
-            fontSize: RFPercentage(1.8),
-          }}
-        >
-          Sign in with Apple ID
-        </Text>
-      </TouchableOpacity>
-
-      {/* Signup */}
-      <View
-        style={{
           flexDirection: "row",
           alignItems: "flex-end",
           flex: 1,
@@ -366,19 +200,14 @@ export default function LoginScreen(props) {
       >
         <Text
           style={{
-            color: Colors.white,
+            color: Colors.lightBlack,
             fontFamily: FontFamily.regular,
             fontSize: RFPercentage(1.5),
           }}
         >
           Don’t have an account ?
         </Text>
-        <TouchableOpacity
-          onPress={() => {
-            props.navigation.navigate("SignupScreen");
-          }}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity activeOpacity={0.7}>
           <Text
             style={{
               color: Colors.primary,
@@ -399,12 +228,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-start",
     alignItems: "center",
-    backgroundColor: Colors.blacky,
+    backgroundColor: Colors.white,
   },
   logocontainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginTop: RFPercentage(7),
+    marginTop: RFPercentage(5),
   },
   logo: {
     width: RFPercentage(15),
@@ -425,15 +254,21 @@ const styles = StyleSheet.create({
     height: RFPercentage(5),
   },
   emailmain: {
+    flexDirection: "row",
+    alignItems: "center",
     width: "90%",
     height: RFPercentage(7),
-    backgroundColor: Colors.ligthBlack,
+    borderBottomWidth: RFPercentage(0.2),
+    borderBottomColor: Colors.primary,
     color: Colors.blacky,
-    paddingLeft: RFPercentage(3),
+    paddingLeft: RFPercentage(1.5),
     borderRadius: RFPercentage(1),
-    justifyContent: "center",
   },
-  input: { fontFamily: FontFamily.regular, color: Colors.lightWhite },
+  input: {
+    fontFamily: FontFamily.regular,
+    color: Colors.blacksuit,
+    fontSize: RFPercentage(2),
+  },
 
   error: {
     color: "#FF0000",
@@ -447,29 +282,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: RFPercentage(4),
-  },
-  appfbgcontainer: {
-    width: "90%",
-    paddingVertical: RFPercentage(1.5),
-    marginVertical: RFPercentage(1),
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: RFPercentage(0.1),
-    borderColor: Colors.lightWhite,
-    borderRadius: RFPercentage(1),
-    flexDirection: "row",
-  },
-  socialmain: {
-    width: "90%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: RFPercentage(3),
-  },
-  fbglogo: {
-    width: RFPercentage(3),
-    height: RFPercentage(3),
-    marginRight: RFPercentage(1.5),
   },
 
   forgotPasswordButton: {

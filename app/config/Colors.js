@@ -1,7 +1,9 @@
 export default {
-  primary: "#2A9DF4",
+  primary: "#0AA6A9",
   purple: "#C814B6",
   blacky: "#202020",
+  lightBlack: "#818181",
+  blacksuit: "#5C5B5B",
   instared: "#FB2576",
   yellow: "#FEDA77",
   ligthBlack: "#363636",

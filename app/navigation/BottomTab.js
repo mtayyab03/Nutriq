@@ -13,7 +13,7 @@ import {
 
 //screens
 import HomeScreen from "../screens/HomeScreen";
-import NewPostScreen from "../screens/NewPostScreen";
+import ProfileScreen from "../screens/ProfileScreen";
 
 //config
 import Colors from "../config/Colors";
@@ -22,7 +22,7 @@ const Tab = createBottomTabNavigator();
 const SearchScreen = () => {
   return null; // Return null for an empty screen
 };
-const ProfileScreen = () => {
+const NewPostScreen = () => {
   return null; // Return null for an empty screen
 };
 
@@ -82,7 +82,7 @@ export default function BottomTab() {
         name="ProfileScreen"
         component={ProfileScreen}
         options={{
-          tabBarLabel: "Reels",
+          tabBarLabel: "Profile",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-circle-outline" color={color} size={size} />
           ),
