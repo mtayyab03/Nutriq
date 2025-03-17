@@ -46,6 +46,7 @@ export default function LoginScreen(props) {
     try {
       // Navigate to BottomTab screen on success
       props.navigation.navigate("BottomTab", { screen: "HomeScreen" });
+      setLoading(false);
     } catch (error) {
       setLoading(false);
       Alert.alert("Login Failed", "Please check your email and password.");
@@ -175,7 +176,7 @@ export default function LoginScreen(props) {
                   borderRadius: RFPercentage(1),
                   alignItems: "center",
                   justifyContent: "center",
-                  marginTop: RFPercentage(2),
+                  marginTop: RFPercentage(4),
                   backgroundColor: Colors.primary,
                 }}
               >
@@ -215,7 +216,7 @@ export default function LoginScreen(props) {
               fontSize: RFPercentage(1.5),
             }}
           >
-            SIGN UP
+            Register
           </Text>
         </TouchableOpacity>
       </View>
@@ -285,14 +286,14 @@ const styles = StyleSheet.create({
   },
 
   forgotPasswordButton: {
-    marginTop: RFPercentage(1),
+    marginTop: RFPercentage(2),
     position: "absolute",
     right: RFPercentage(2),
   },
   forgotPasswordText: {
-    color: Colors.primary,
+    color: Colors.blacksuit,
     fontFamily: FontFamily.regular,
-    fontSize: RFPercentage(1.4),
+    fontSize: RFPercentage(1.8),
   },
   buttontext: {
     color: Colors.white,
