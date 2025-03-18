@@ -9,6 +9,8 @@ import {
   Feather,
   Ionicons,
   MaterialIcons,
+  MaterialCommunityIcons,
+  EvilIcons,
 } from "@expo/vector-icons";
 
 //screens
@@ -32,7 +34,7 @@ export default function BottomTab() {
       initialRouteName="HomeScreen"
       screenOptions={{
         tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.white,
+        tabBarInactiveTintColor: Colors.lightgrey,
         headerShown: false,
         tabBarStyle: {
           height: wp("18%"),
@@ -40,18 +42,21 @@ export default function BottomTab() {
           paddingBottom: RFPercentage(2),
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: Colors.blacky,
+          backgroundColor: Colors.white,
         },
-        tabBarLabelStyle: { display: "none" },
       }}
     >
       <Tab.Screen
         name="HomeScreen"
         component={HomeScreen}
         options={{
-          tabBarLabel: "Home",
+          tabBarLabel: "Plan",
           tabBarIcon: ({ color, size }) => (
-            <Entypo name="home" color={color} size={size} />
+            <MaterialCommunityIcons
+              name="calendar-check"
+              color={color}
+              size={size}
+            />
           ),
         }}
       />
@@ -60,7 +65,7 @@ export default function BottomTab() {
         name="SearchScreen"
         component={SearchScreen}
         options={{
-          tabBarLabel: "Search",
+          tabBarLabel: "Discover",
           tabBarIcon: ({ color, size }) => (
             <Feather name="search" color={color} size={size} />
           ),
@@ -71,9 +76,9 @@ export default function BottomTab() {
         name="NewPostScreen"
         component={NewPostScreen}
         options={{
-          tabBarLabel: "Post",
+          tabBarLabel: "Progress",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add-circle-outline" color={color} size={30} />
+            <EvilIcons name="chart" color={color} size={30} />
           ),
         }}
       />

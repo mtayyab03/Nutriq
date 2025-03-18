@@ -17,6 +17,7 @@ import { Ionicons, Fontisto, MaterialCommunityIcons } from "@expo/vector-icons";
 
 //Components
 import Screen from "../components/Screen";
+import AppButton from "../components/AppButton";
 
 //config
 import icons from "../config/icons";
@@ -169,23 +170,11 @@ export default function LoginScreen(props) {
               activeOpacity={0.7}
               onPress={handleSubmit} // Submit form
             >
-              <View
-                style={{
-                  width: "90%",
-                  height: RFPercentage(6.5),
-                  borderRadius: RFPercentage(1),
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginTop: RFPercentage(4),
-                  backgroundColor: Colors.primary,
-                }}
-              >
-                {loading ? (
-                  <ActivityIndicator color={Colors.white} size={22} />
-                ) : (
-                  <Text style={styles.buttontext}>Login</Text>
-                )}
-              </View>
+              <AppButton
+                title={"Login"}
+                buttonColor={Colors.primary}
+                loading={loading}
+              />
             </TouchableOpacity>
           </>
         )}

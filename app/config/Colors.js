@@ -1,7 +1,9 @@
 export default {
   primary: "#0AA6A9",
+  lightgreen: "#44C5C7",
   purple: "#C814B6",
   blacky: "#202020",
+  textField: "#F0F0F0",
   lightBlack: "#818181",
   blacksuit: "#5C5B5B",
   instared: "#FB2576",
@@ -16,7 +18,7 @@ export default {
   textcolor: "#656567",
   placeholder: "#0D104080",
   inputcolor: "#F2F3F7",
-  grey: "#858585",
+  grey: "#818181",
   blue: "#47A7EC",
   red: "#DF3246",
   green: "#55DD49",
