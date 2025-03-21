@@ -14,10 +14,14 @@ import { RFPercentage } from "react-native-responsive-fontsize";
 import { Formik } from "formik";
 import * as yup from "yup";
 import { Ionicons, Fontisto, MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 //Components
 import Screen from "../components/Screen";
 import AppButton from "../components/AppButton";
+
+// apis
+import apiClient from "../apis/apiClient";
 
 //config
 import icons from "../config/icons";
@@ -42,15 +46,42 @@ export default function LoginScreen(props) {
       .label("Password"),
   });
 
-  const handleLogin = async (values) => {
+  const storeToken = async (token) => {
+    try {
+      await AsyncStorage.setItem("authToken", token);
+      console.log("Token stored successfully!");
+    } catch (error) {
+      console.log("Error storing token:", error);
+    }
+  };
+
+  const handleLogin = async ({ email, password }) => {
     setLoading(true);
     try {
-      // Navigate to BottomTab screen on success
-      props.navigation.navigate("BottomTab", { screen: "HomeScreen" });
-      setLoading(false);
+      console.log("Attempting login with:", email, password); // Debugging log
+
+      const response = await apiClient.post("/login", {
+        username: email, // or phone number
+        password: password,
+      });
+
+      console.log("API Response:", response.data); // Log full response
+
+      if (response.data.token) {
+        await storeToken(response.data.token);
+        props.navigation.navigate("BottomTab", { screen: "HomeScreen" });
+      } else {
+        Alert.alert("Login Failed", "Invalid response from server.");
+      }
     } catch (error) {
+      console.log("Login error:", error?.response?.data || error.message);
+      Alert.alert(
+        "Login Failed",
+        error?.response?.data?.message ||
+          "Please check your email and password."
+      );
+    } finally {
       setLoading(false);
-      Alert.alert("Login Failed", "Please check your email and password.");
     }
   };
 
@@ -70,7 +101,7 @@ export default function LoginScreen(props) {
       <Formik
         initialValues={{ email: "", password: "" }}
         onSubmit={handleLogin}
-        validationSchema={validationSchema}
+        // validationSchema={validationSchema}
       >
         {({
           handleChange,

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Image,
   KeyboardAvoidingView,
@@ -13,10 +13,14 @@ import { RFPercentage } from "react-native-responsive-fontsize";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
+
 //config
 import Colors from "../config/Colors";
 import { FontFamily } from "../config/font";
 import icons from "../config/icons";
+
+// apis
+import apiClient from "../apis/apiClient";
 
 // component
 import TitleFieldRow from "../components/TitleFieldRow";
@@ -30,6 +34,27 @@ const Profilescreen = (props) => {
   const [bio, setBio] = useState("");
   const [loading, setLoading] = useState(false); // Add loading state
   const [selectedImage, setSelectedImage] = useState(null);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await apiClient.get("/users/profile");
+        const userData = response.data;
+
+        setFirstName(userData.firstName || "");
+        setSurName(userData.lastName || "");
+        setEmail(userData.email || "");
+        setDescription(userData.shortDescription || "");
+        setBio(userData.bio || "");
+        setSelectedImage(userData.avatar ? { uri: userData.avatar } : null);
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
   const pickImage = async () => {
     // Request permission to access the camera roll
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -97,7 +122,7 @@ const Profilescreen = (props) => {
                 source={
                   selectedImage
                     ? { uri: selectedImage } // If an image is picked, use it
-                    : icons.profile1 // If null, use the local default image
+                    : icons.baseProfile // If null, use the local default image
                 }
               />
             </TouchableOpacity>
@@ -109,7 +134,7 @@ const Profilescreen = (props) => {
                 fontSize: RFPercentage(1.7),
               }}
             >
-              Armon Nilson
+              {firstName} {surName}
             </Text>
           </View>
         </View>
@@ -119,19 +144,19 @@ const Profilescreen = (props) => {
       <View style={{ marginTop: RFPercentage(1) }} />
       <TitleFieldRow
         title={"Firstname"}
-        placeholder={"Armon"}
+        placeholder={"null"}
         value={firstName}
         onChange={setFirstName}
       />
       <TitleFieldRow
         title={"Surname"}
-        placeholder={"Nilson"}
+        placeholder={"null"}
         value={surName}
         onChange={setSurName}
       />
       <TitleFieldRow
         title={"Email"}
-        placeholder={"info@nutriqapp.com"}
+        placeholder={"null"}
         value={email}
         onChange={setEmail}
       />
@@ -156,9 +181,7 @@ const Profilescreen = (props) => {
           }}
           onChangeText={setDescription}
           value={description}
-          placeholder={
-            "Expert in crafting balanced meals tailored to dietary needs, ensuring taste and health go hand in hand."
-          }
+          placeholder={"null"}
           placeholderTextColor={Colors.placeholder}
           multiline={true} // Allows multi-line input
           numberOfLines={5} // Controls the visible lines
@@ -167,7 +190,7 @@ const Profilescreen = (props) => {
 
       <TitleFieldRow
         title={"Bio"}
-        placeholder={"Passionate about delicious meals"}
+        placeholder={"null"}
         value={bio}
         onChange={setBio}
       />

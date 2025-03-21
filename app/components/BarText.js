@@ -12,7 +12,7 @@ const BarText = ({ barColor, title }) => {
     <View
       style={{
         width: "85%",
-        height: RFPercentage(3),
+        // height: RFPercentage(3),
         borderRadius: RFPercentage(1),
         borderWidth: RFPercentage(0.1),
         borderColor: barColor,
@@ -24,7 +24,7 @@ const BarText = ({ barColor, title }) => {
       <View
         style={{
           width: RFPercentage(1),
-          height: RFPercentage(3),
+          height: "100%",
           justifyContent: "center", // Center the text vertically
           backgroundColor: barColor,
           marginRight: RFPercentage(1),
@@ -32,8 +32,10 @@ const BarText = ({ barColor, title }) => {
           borderBottomLeftRadius: RFPercentage(1),
         }}
       />
+
       <Text
         style={{
+          marginVertical: RFPercentage(0.5),
           color: Colors.blacksuit,
           fontFamily: FontFamily.medium,
           fontSize: RFPercentage(1.2),

@@ -4,7 +4,9 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Modal,
   StyleSheet,
+  Platform,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
@@ -100,15 +102,38 @@ const DatePicker = ({
         </TouchableOpacity>
       </View>
 
-      {isDatePickerVisible && (
-        <DateTimePicker
-          value={selectedDate}
-          mode="date"
-          display="default"
-          onChange={(event, date) => {
-            if (date) handleConfirm(date);
-          }}
-        />
+      {Platform.OS === "ios" ? (
+        <Modal transparent visible={isDatePickerVisible} animationType="fade">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display="inline"
+                onChange={(event, date) => {
+                  if (date) handleConfirm(date);
+                }}
+              />
+              {/* <TouchableOpacity
+                onPress={hideDatePicker}
+                style={styles.doneButton}
+              >
+                <Text style={styles.doneText}>Done</Text>
+              </TouchableOpacity> */}
+            </View>
+          </View>
+        </Modal>
+      ) : (
+        isDatePickerVisible && (
+          <DateTimePicker
+            value={selectedDate}
+            mode="date"
+            display="default"
+            onChange={(event, date) => {
+              if (date) handleConfirm(date);
+            }}
+          />
+        )
       )}
     </View>
   );
@@ -123,6 +148,29 @@ const styles = StyleSheet.create({
   },
   calendarIcon: {
     marginLeft: RFPercentage(1),
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: Colors.white,
+    padding: RFPercentage(2),
+    borderRadius: RFPercentage(1.5),
+    alignItems: "center",
+  },
+  doneButton: {
+    marginTop: RFPercentage(2),
+    padding: RFPercentage(1),
+    backgroundColor: Colors.primary,
+    borderRadius: RFPercentage(1),
+  },
+  doneText: {
+    color: Colors.white,
+    fontSize: RFPercentage(1.6),
+    fontFamily: FontFamily.medium,
   },
 });
 

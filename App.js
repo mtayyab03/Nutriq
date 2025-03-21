@@ -11,6 +11,10 @@ import {
 //navigation
 import NavigationStack from "./app/navigation/NavigationStack";
 
+// redux
+import store from "./app/redux/store";
+import { Provider } from "react-redux";
+
 //component
 import AppLoading from "./app/components/AppLoading";
 
@@ -29,9 +33,11 @@ export default function App() {
     return <AppLoading />;
   } else {
     return (
-      <NavigationContainer>
-        <NavigationStack />
-      </NavigationContainer>
+      <Provider store={store}>
+        <NavigationContainer>
+          <NavigationStack />
+        </NavigationContainer>
+      </Provider>
     );
   }
 }

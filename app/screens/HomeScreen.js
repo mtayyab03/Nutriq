@@ -11,20 +11,24 @@ import {
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { MaterialIcons } from "@expo/vector-icons";
 
-//Components
+//Cdnesdayomponents
 import Screen from "../components/Screen";
 import DatePicker from "../components/DatePicker";
+import BarText from "../components/BarText";
+import MealDef from "../components/Specific/MealDef";
+
+// apis
+import apiClient from "../apis/apiClient";
 
 //config
 import Colors from "../config/Colors";
 import { FontFamily } from "../config/font";
-import BarText from "../components/BarText";
-import MealDef from "../components/Specific/MealDef";
+import icons from "../config/icons";
 
 const daysOfWeek = [
   "Monday",
   "Tuesday",
-  "Wednesday",
+  "WEDNESDAY",
   "Thursday",
   "Friday",
   "Saturday",
@@ -32,6 +36,8 @@ const daysOfWeek = [
 ];
 
 const HomeScreen = () => {
+  const [mealData, setMealData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [date, setDate] = useState("");
   const [error, setError] = useState({ date: false });
 
@@ -53,63 +59,60 @@ const HomeScreen = () => {
     );
   };
 
-  const mealData = [
-    {
-      mealType: "Breakfast",
-      foods: "Grilled Chicken with Avocado Salad",
-      recipe: null,
-      notes: "Check for organic options",
-      calories: "2100 Kcal",
-    },
-    {
-      mealType: "Morning Snack",
-      foods: "Mango and Grapes (2 pieces)",
-      recipe: "Prepare a smoothie with almond milk",
-      notes: null,
-      calories: "2500 Kcal",
-    },
-    {
-      mealType: "Afternoon Snack",
-      foods: "Orange and Strawberries (3 pieces)",
-      recipe: null,
-      notes: null,
-      calories: "2200 Kcal",
-    },
-    {
-      mealType: "Lunch",
-      foods: "Grilled Chicken with Avocado Salad",
-      recipe: "Marinate chicken with spices, grill it & serve with salad",
-      notes: "Use olive oil for dressing",
-      calories: "1800 Kcal",
-    },
-    {
-      mealType: "Dinner",
-      foods: "Steamed Salmon with Quinoa",
-      recipe: null,
-      notes: "Pair with green veggies",
-      calories: "1600 Kcal",
-    },
+  useEffect(() => {
+    const fetchMealData = async () => {
+      try {
+        const response = await apiClient.get(
+          "/client/company/1/meal-plans/183"
+        );
+        console.log("Meal plan data:", JSON.stringify(response.data, null, 2));
+
+        // Ensure the API response is properly formatted before setting state
+        if (response.data && Array.isArray(response.data.meals)) {
+          setMealData(response.data.meals);
+        } else {
+          console.error("Unexpected API response format", response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching meal data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMealData();
+  }, []);
+
+  const currentDay = daysOfWeek[currentDayIndex].toUpperCase();
+
+  const mealOrder = {
+    BREAKFAST: 1,
+    MID_MORNING_SNACK: 2,
+    LUNCH: 3,
+    AFTERNOON_SNACK: 4,
+    DINNER: 5,
+  };
+
+  const filteredMeals = Array.isArray(mealData)
+    ? mealData
+        .filter((meal) => meal.day?.toUpperCase() === currentDay)
+        .sort(
+          (a, b) =>
+            (mealOrder[a.mealTime] || 99) - (mealOrder[b.mealTime] || 99)
+        )
+    : [];
+
+  // const filteredMeals = Array.isArray(mealData)
+  //   ? mealData.filter((meal) => meal.day?.toUpperCase() === currentDay)
+  //   : [];
+
+  const availableDays = [
+    ...new Set(mealData?.map((meal) => meal.day.toUpperCase()) || []),
   ];
 
-  const MealDays = [
-    {
-      day: "Monday",
-    },
-    {
-      day: "Tuesday",
-    },
-    {
-      day: "Wedesday",
-    },
-    {
-      day: "Thursday",
-    },
-    { day: "Friday" },
-    {
-      day: "Saturday",
-    },
-    { day: "Sunnday" },
-  ];
+  const missingDays = daysOfWeek.filter(
+    (day) => !availableDays.includes(day.toUpperCase())
+  );
 
   return (
     <Screen style={styles.screen}>
@@ -265,6 +268,7 @@ const HomeScreen = () => {
       </View>
 
       {/* Meal details  */}
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -272,45 +276,75 @@ const HomeScreen = () => {
           paddingBottom: RFPercentage(4),
         }}
       >
-        {mealData.map((meal, index) => (
-          <View
-            key={index}
+        {filteredMeals.length > 0 ? (
+          filteredMeals.map((meal, index) => {
+            const foodNames =
+              meal.foods && meal.foods.length > 0
+                ? meal.foods.map((f) => f.food.name).join(", ")
+                : null;
+
+            const recipeNames =
+              meal.recipes && meal.recipes.length > 0
+                ? meal.recipes.map((r) => r.recipe.name).join(", ")
+                : null;
+
+            const hasData =
+              foodNames || recipeNames || meal.note || meal.energyKcal;
+
+            if (!hasData) return null; // Skip rendering if there's no data
+            return (
+              <View
+                key={index}
+                style={{
+                  width: "90%",
+                  marginTop: RFPercentage(2),
+                  flexDirection: "row",
+                }}
+              >
+                <View style={styles.rotContainer}>
+                  <View style={styles.rotationCon}>
+                    <Text style={styles.rotText}>
+                      {meal.mealTime.replace(/_/g, " ")}
+                    </Text>
+                  </View>
+                </View>
+                <View style={{ width: "100%", justifyContent: "center" }}>
+                  {foodNames && (
+                    <BarText barColor={Colors.primary} title={foodNames} />
+                  )}
+
+                  {recipeNames && (
+                    <BarText barColor={Colors.brown} title={recipeNames} />
+                  )}
+
+                  {meal.note && (
+                    <BarText barColor={Colors.purple} title={meal.note} />
+                  )}
+                  {meal.energyKcal && (
+                    <View style={styles.CalContainer}>
+                      <MaterialIcons
+                        color={Colors.white}
+                        size={18}
+                        name={"electric-bolt"}
+                      />
+                      <Text style={styles.CalText}>{meal.energyKcal}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            );
+          })
+        ) : (
+          <Text
             style={{
-              width: "90%",
-              marginTop: RFPercentage(2),
-              flexDirection: "row",
+              color: Colors.red,
+              fontSize: 16,
+              marginTop: RFPercentage(10),
             }}
           >
-            <View style={styles.rotContainer}>
-              <View style={styles.rotationCon}>
-                <Text style={styles.rotText}>{meal.mealType}</Text>
-              </View>
-            </View>
-            <View style={{ width: "100%", justifyContent: "center" }}>
-              {meal.foods && (
-                <BarText barColor={Colors.primary} title={meal.foods} />
-              )}
-
-              {meal.recipe && (
-                <BarText barColor={Colors.brown} title={meal.recipe} />
-              )}
-
-              {meal.notes && (
-                <BarText barColor={Colors.purple} title={meal.notes} />
-              )}
-              {meal.calories && (
-                <View style={styles.CalContainer}>
-                  <MaterialIcons
-                    color={Colors.white}
-                    size={18}
-                    name={"electric-bolt"}
-                  />
-                  <Text style={styles.CalText}>{meal.calories}</Text>
-                </View>
-              )}
-            </View>
-          </View>
-        ))}
+            No meals available for {currentDay}
+          </Text>
+        )}
       </ScrollView>
       {/* meal detaile end */}
     </Screen>
@@ -354,7 +388,7 @@ const styles = StyleSheet.create({
     fontSize: RFPercentage(1.2),
   },
   CalContainer: {
-    width: RFPercentage(9),
+    width: RFPercentage(18),
     paddingVertical: RFPercentage(0.2),
     borderRadius: RFPercentage(0.7),
     marginTop: RFPercentage(0.5),
