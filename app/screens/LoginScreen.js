@@ -64,17 +64,7 @@ export default function LoginScreen(props) {
       </View>
 
       {/* login text */}
-      <View style={{ width: "90%", marginTop: RFPercentage(8) }}>
-        <Text
-          style={{
-            color: Colors.white,
-            fontFamily: FontFamily.medium,
-            fontSize: RFPercentage(2.4),
-          }}
-        >
-          Login
-        </Text>
-      </View>
+      <View style={{ marginTop: RFPercentage(7) }} />
 
       {/* //email input */}
       <Formik
