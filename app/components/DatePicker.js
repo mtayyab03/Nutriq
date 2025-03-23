@@ -19,7 +19,7 @@ import { FontFamily } from "../config/font";
 
 const DatePicker = ({
   label = "Starting Date",
-  placeholder = "YYYY-MM-DD",
+  placeholder,
   onDateChange,
   error,
   setError,
@@ -95,7 +95,7 @@ const DatePicker = ({
         />
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={showDatePicker}
+          // onPress={showDatePicker}
           style={styles.calendarIcon}
         >
           <Feather name="calendar" size={20} color={Colors.gray} />
@@ -142,7 +142,7 @@ const DatePicker = ({
 const styles = StyleSheet.create({
   textInput: {
     flex: 1,
-    color: Colors.blacktext,
+    color: Colors.blacksuit,
     fontSize: RFPercentage(1.4),
     fontFamily: FontFamily.regular,
   },

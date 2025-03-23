@@ -5,7 +5,6 @@ import {
   StyleSheet,
   View,
   Text,
-  TextInput,
   ScrollView,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
@@ -28,7 +27,7 @@ import icons from "../config/icons";
 const daysOfWeek = [
   "Monday",
   "Tuesday",
-  "WEDNESDAY",
+  "Wednesday",
   "Thursday",
   "Friday",
   "Saturday",
@@ -37,6 +36,13 @@ const daysOfWeek = [
 
 const HomeScreen = () => {
   const [mealData, setMealData] = useState([]);
+  const [companyName, setCompanyName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [surName, setSurName] = useState("");
+
+  const [startingDate, setStartingDate] = useState("null");
+  const [endingDate, setEndingDate] = useState("null");
+
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState("");
   const [error, setError] = useState({ date: false });
@@ -60,18 +66,76 @@ const HomeScreen = () => {
   };
 
   useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await apiClient.get("/users/profile");
+        const userData = response.data;
+
+        setFirstName(userData.firstName || "");
+        setSurName(userData.lastName || "");
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
+  useEffect(() => {
     const fetchMealData = async () => {
       try {
-        const response = await apiClient.get(
-          "/client/company/1/meal-plans/183"
-        );
-        console.log("Meal plan data:", JSON.stringify(response.data, null, 2));
+        // Fetch company details
+        const companyResponse = await apiClient.get("/client/companies");
 
-        // Ensure the API response is properly formatted before setting state
-        if (response.data && Array.isArray(response.data.meals)) {
-          setMealData(response.data.meals);
+        if (companyResponse.data && companyResponse.data.length > 0) {
+          const { id: companyId, name } = companyResponse.data[0]; // Extract first company
+          setCompanyName(name);
+
+          console.log(`Fetching meals for Company: ${name} (ID: ${companyId})`);
+
+          const mealPlanResponse = await apiClient.get(
+            `/client/company/${companyId}/meal-plans`
+          );
+
+          if (mealPlanResponse.data && mealPlanResponse.data.length > 0) {
+            const mealPlanId = mealPlanResponse.data[0].id; // Extract first meal plan ID
+
+            console.log(`Fetching meals for Meal Plan ID: ${mealPlanId}`);
+
+            const response = await apiClient.get(
+              `/client/company/${companyId}/meal-plans/${mealPlanId}`
+            );
+            // console.log("Meal plan data:", JSON.stringify(response.data, null, 2));
+
+            // Ensure the API response is properly formatted before setting state
+            if (response.data && Array.isArray(response.data.meals)) {
+              setMealData(response.data.meals);
+              const formattedStartingDate = response.data.startingDate
+                ? new Date(response.data.startingDate)
+                    .toISOString()
+                    .split("T")[0]
+                : "YYYY-MM-DD"; // Default placeholder if null
+
+              const formattedEndingDate = response.data.endingDate
+                ? new Date(response.data.endingDate).toISOString().split("T")[0]
+                : "YYYY-MM-DD"; // Default placeholder if null
+
+              setStartingDate(formattedStartingDate);
+              setEndingDate(formattedEndingDate);
+            } else {
+              console.error("Unexpected API response format", response.data);
+            }
+          } else {
+            console.error(
+              "No meal plans found for company",
+              mealPlanResponse.data
+            );
+          }
         } else {
-          console.error("Unexpected API response format", response.data);
+          console.error(
+            "No companies found in response:",
+            companyResponse.data
+          );
         }
       } catch (error) {
         console.error("Error fetching meal data:", error);
@@ -102,13 +166,12 @@ const HomeScreen = () => {
         )
     : [];
 
-  // const filteredMeals = Array.isArray(mealData)
-  //   ? mealData.filter((meal) => meal.day?.toUpperCase() === currentDay)
-  //   : [];
-
   const availableDays = [
     ...new Set(mealData?.map((meal) => meal.day.toUpperCase()) || []),
   ];
+  const totalCalories = filteredMeals
+    .reduce((sum, meal) => sum + (meal.energyKcal || 0), 0)
+    .toFixed(1); // Formats to one decimal place
 
   const missingDays = daysOfWeek.filter(
     (day) => !availableDays.includes(day.toUpperCase())
@@ -126,7 +189,7 @@ const HomeScreen = () => {
       >
         <View
           style={{
-            width: "50%",
+            width: "60%",
             justifyContent: "flex-start",
             alignItems: "flex-start",
           }}
@@ -143,16 +206,16 @@ const HomeScreen = () => {
               style={{
                 color: Colors.blacksuit, // Use a different color
                 fontFamily: FontFamily.medium,
-                fontSize: RFPercentage(3), // Slightly bigger if preferred
+                fontSize: RFPercentage(2.8), // Slightly bigger if preferred
               }}
             >
-              Anaya Nilson
+              {firstName} {surName}
             </Text>
           </Text>
         </View>
         <View
           style={{
-            width: "50%",
+            width: "40%",
             justifyContent: "flex-end",
             alignItems: "flex-end",
           }}
@@ -174,7 +237,7 @@ const HomeScreen = () => {
               fontSize: RFPercentage(1.7), // Slightly bigger if preferred
             }}
           >
-            Greece Meal LTD.
+            {companyName || "null"}
           </Text>
         </View>
       </View>
@@ -191,14 +254,14 @@ const HomeScreen = () => {
       >
         <DatePicker
           label="Starting Date"
-          placeholder="YYYY-MM-DD"
+          placeholder={startingDate}
           onDateChange={handleDateChange}
           error={error}
           setError={setError}
         />
         <DatePicker
           label="Ending Date"
-          placeholder="YYYY-MM-DD"
+          placeholder={endingDate}
           onDateChange={handleDateChange}
           error={error}
           setError={setError}
@@ -244,13 +307,12 @@ const HomeScreen = () => {
             />
             <Text
               style={{
-                marginLeft: RFPercentage(0.5),
                 color: Colors.orange, // Use a different color
                 fontFamily: FontFamily.regular,
                 fontSize: RFPercentage(1.2), // Slightly bigger if preferred
               }}
             >
-              3019 Kcal
+              {totalCalories} Kcal
             </Text>
           </View>
         </View>
@@ -327,7 +389,9 @@ const HomeScreen = () => {
                         size={18}
                         name={"electric-bolt"}
                       />
-                      <Text style={styles.CalText}>{meal.energyKcal}</Text>
+                      <Text style={styles.CalText}>
+                        {meal.energyKcal.toFixed(1)}
+                      </Text>
                     </View>
                   )}
                 </View>
@@ -369,7 +433,7 @@ const styles = StyleSheet.create({
   rotContainer: {
     backgroundColor: Colors.lwhite, // Set background color
     width: RFPercentage(3), // Width of the container (matches the height of the rotated text)
-    height: RFPercentage(14),
+    height: RFPercentage(15),
     justifyContent: "center", // Center the text vertically
     alignItems: "center", // Center the text horizontally
     borderRadius: RFPercentage(0.3),
@@ -377,7 +441,7 @@ const styles = StyleSheet.create({
   },
   rotationCon: {
     transform: [{ rotate: "-90deg" }], // Rotate the inner view
-    width: RFPercentage(12), // Width of the rotated content
+    width: RFPercentage(15), // Width of the rotated content
     height: RFPercentage(3), // Height of the rotated content
     justifyContent: "center",
     alignItems: "center",
@@ -385,10 +449,10 @@ const styles = StyleSheet.create({
   rotText: {
     color: Colors.blacksuit,
     fontFamily: FontFamily.medium,
-    fontSize: RFPercentage(1.2),
+    fontSize: RFPercentage(1),
   },
   CalContainer: {
-    width: RFPercentage(18),
+    width: RFPercentage(10),
     paddingVertical: RFPercentage(0.2),
     borderRadius: RFPercentage(0.7),
     marginTop: RFPercentage(0.5),

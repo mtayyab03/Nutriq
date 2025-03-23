@@ -276,6 +276,7 @@ const styles = StyleSheet.create({
     borderRadius: RFPercentage(1),
   },
   input: {
+    width: "75%",
     fontFamily: FontFamily.regular,
     color: Colors.blacksuit,
     fontSize: RFPercentage(2),
@@ -292,7 +293,7 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: RFPercentage(4),
+    marginTop: RFPercentage(6),
   },
 
   forgotPasswordButton: {

@@ -90,7 +90,7 @@ const Profilescreen = (props) => {
         end={{ x: 1, y: 1 }} // End point (bottom-right)
         style={{
           width: "100%",
-          height: Platform.OS == "ios" ? RFPercentage(28) : RFPercentage(20),
+          height: Platform.OS == "ios" ? RFPercentage(28) : RFPercentage(26),
           alignItems: "center",
           justifyContent: "center",
           borderBottomLeftRadius: RFPercentage(5),
