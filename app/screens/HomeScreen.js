@@ -253,18 +253,26 @@ const HomeScreen = () => {
         }}
       >
         <DatePicker
+          width={"48%"}
+          titleSize={RFPercentage(1.2)}
+          borderColor={Colors.primary}
           label="Starting Date"
           placeholder={startingDate}
           onDateChange={handleDateChange}
           error={error}
           setError={setError}
+          icon={"calendar-month-outline"}
         />
         <DatePicker
+          width={"48%"}
+          titleSize={RFPercentage(1.2)}
+          borderColor={Colors.primary}
           label="Ending Date"
           placeholder={endingDate}
           onDateChange={handleDateChange}
           error={error}
           setError={setError}
+          icon={"calendar-month-outline"}
         />
       </View>
 

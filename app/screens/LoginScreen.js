@@ -32,20 +32,6 @@ export default function LoginScreen(props) {
   const [eyeIcon, setEyeIcon] = useState(false);
   const [loading, setLoading] = useState(false); // Add loading state
 
-  // Validation schema for email and password
-  let validationSchema = yup.object().shape({
-    email: yup.string().required().email().label("Email"),
-    password: yup
-      .string()
-      .required()
-      .min(8)
-      .matches(/[A-Z]/, "Must contain at least one uppercase letter")
-      .matches(/[a-z]/, "Must contain at least one lowercase letter")
-      .matches(/[0-9]/, "Must contain at least one digit")
-      .matches(/[!@#$%^&*(),.?":{}|<>]/, "Must contain at least one symbol")
-      .label("Password"),
-  });
-
   const storeToken = async (token) => {
     try {
       await AsyncStorage.setItem("authToken", token);
@@ -58,20 +44,31 @@ export default function LoginScreen(props) {
   const handleLogin = async ({ email, password }) => {
     setLoading(true);
     try {
-      console.log("Attempting login with:", email, password); // Debugging log
+      console.log("Attempting login with:", email, password);
 
-      const response = await apiClient.post("/login", {
-        username: email, // or phone number
-        password: password,
+      const loginRes = await apiClient.post("/login", {
+        username: email,
+        password,
       });
+      console.log("API Response:", loginRes.data);
 
-      console.log("API Response:", response.data); // Log full response
-
-      if (response.data.token) {
-        await storeToken(response.data.token);
-        props.navigation.navigate("BottomTab", { screen: "HomeScreen" });
-      } else {
+      if (!loginRes.data.token) {
         Alert.alert("Login Failed", "Invalid response from server.");
+        return;
+      }
+
+      await storeToken(loginRes.data.token);
+
+      const profileRes = await apiClient.get("/users/profile");
+      const { role } = profileRes.data;
+      console.log("Profile data:", profileRes.data);
+
+      if (role === "CLIENT") {
+        props.navigation.navigate("BottomTab", { screen: "HomeScreen" });
+      } else if (role === "BASIC_PROF") {
+        props.navigation.navigate("CalendarScreen");
+      } else {
+        Alert.alert("Login", "Your account role is not recognized.");
       }
     } catch (error) {
       console.log("Login error:", error?.response?.data || error.message);

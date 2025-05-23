@@ -9,7 +9,7 @@ import {
   Platform,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Feather } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { RFPercentage } from "react-native-responsive-fontsize";
 
 //config
@@ -21,8 +21,14 @@ const DatePicker = ({
   label = "Starting Date",
   placeholder,
   onDateChange,
+  onTimeChange, // ➕ New prop
+  isTimePicker = false, // ➕ Prop to control time/date mode
   error,
   setError,
+  borderColor,
+  width,
+  titleSize,
+  icon,
 }) => {
   const [date, setDate] = useState("");
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
@@ -36,28 +42,49 @@ const DatePicker = ({
     setDatePickerVisibility(false);
   };
 
-  const handleConfirm = (selectedDate) => {
+  // const handleConfirm = (selectedDate) => {
+  //   hideDatePicker();
+  //   const formattedDate = `${selectedDate.getFullYear()}-${(
+  //     selectedDate.getMonth() + 1
+  //   )
+  //     .toString()
+  //     .padStart(2, "0")}-${selectedDate.getDate().toString().padStart(2, "0")}`;
+  //   setDate(formattedDate);
+  //   setSelectedDate(selectedDate);
+  //   if (onDateChange) {
+  //     onDateChange(formattedDate); // Pass the formatted date to the parent component
+  //   }
+  // };
+
+  const handleConfirm = (selected) => {
     hideDatePicker();
-    const formattedDate = `${selectedDate.getFullYear()}-${(
-      selectedDate.getMonth() + 1
-    )
-      .toString()
-      .padStart(2, "0")}-${selectedDate.getDate().toString().padStart(2, "0")}`;
-    setDate(formattedDate);
-    setSelectedDate(selectedDate);
-    if (onDateChange) {
-      onDateChange(formattedDate); // Pass the formatted date to the parent component
+    setSelectedDate(selected);
+
+    if (isTimePicker) {
+      const formattedTime = selected.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      setDate(formattedTime);
+      if (onTimeChange) onTimeChange(formattedTime);
+    } else {
+      const formattedDate = `${selected.getFullYear()}-${(
+        selected.getMonth() + 1
+      )
+        .toString()
+        .padStart(2, "0")}-${selected.getDate().toString().padStart(2, "0")}`;
+      setDate(formattedDate);
+      if (onDateChange) onDateChange(formattedDate);
     }
   };
-
   return (
-    <View style={{ width: "48%", marginTop: RFPercentage(1) }}>
+    <View style={{ width: width, marginTop: RFPercentage(1) }}>
       <Text
         style={{
           marginTop: RFPercentage(0.7),
-          color: Colors.grey,
-          fontFamily: FontFamily.medium,
-          fontSize: RFPercentage(1.2),
+          color: Colors.blacksuit,
+          fontFamily: FontFamily.regular,
+          fontSize: titleSize,
         }}
       >
         {label}
@@ -68,7 +95,7 @@ const DatePicker = ({
           width: "100%",
           backgroundColor: Colors.white,
           borderWidth: RFPercentage(0.1),
-          borderColor: Colors.primary,
+          borderColor: borderColor,
           color: Colors.blacktext,
           padding: RFPercentage(1.5),
           alignItems: "center",
@@ -89,16 +116,16 @@ const DatePicker = ({
           }}
           value={date}
           placeholder={placeholder}
-          placeholderTextColor={Colors.placeholder}
+          placeholderTextColor={Colors.stroke}
           style={styles.textInput}
           editable={false} // Prevent manual editing
         />
         <TouchableOpacity
           activeOpacity={0.7}
-          // onPress={showDatePicker}
+          onPress={showDatePicker}
           style={styles.calendarIcon}
         >
-          <Feather name="calendar" size={20} color={Colors.gray} />
+          <MaterialCommunityIcons name={icon} size={20} color={Colors.gray} />
         </TouchableOpacity>
       </View>
 
@@ -108,8 +135,8 @@ const DatePicker = ({
             <View style={styles.modalContent}>
               <DateTimePicker
                 value={selectedDate}
-                mode="date"
-                display="inline"
+                mode={isTimePicker ? "time" : "date"}
+                display={isTimePicker ? "spinner" : "inline"}
                 onChange={(event, date) => {
                   if (date) handleConfirm(date);
                 }}
@@ -127,7 +154,7 @@ const DatePicker = ({
         isDatePickerVisible && (
           <DateTimePicker
             value={selectedDate}
-            mode="date"
+            mode={isTimePicker ? "time" : "date"}
             display="default"
             onChange={(event, date) => {
               if (date) handleConfirm(date);

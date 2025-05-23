@@ -17,6 +17,7 @@ export default {
   stroke: "#B9B9B9",
   white: "#FAFAFA",
   purewhite: "#ffffff",
+  bgwhite: "#f4f4f4",
   textcolor: "#656567",
   placeholder: "#0D104080",
   inputcolor: "#F2F3F7",
@@ -24,4 +25,5 @@ export default {
   darkgrey: "#A0A0A0",
   darkgreen: "#30BEB6",
   placeholder: "#858585",
+  red: "#F64545",
 };

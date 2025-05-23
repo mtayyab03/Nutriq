@@ -119,11 +119,7 @@ const Profilescreen = (props) => {
                   height: RFPercentage(12),
                   borderRadius: RFPercentage(7),
                 }}
-                source={
-                  selectedImage
-                    ? { uri: selectedImage } // If an image is picked, use it
-                    : icons.baseProfile // If null, use the local default image
-                }
+                source={selectedImage ? selectedImage : icons.baseProfile}
               />
             </TouchableOpacity>
             <Text
