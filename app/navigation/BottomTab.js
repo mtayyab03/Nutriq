@@ -16,14 +16,13 @@ import {
 //screens
 import HomeScreen from "../screens/HomeScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import DiscoverScreen from "../screens/Patient/DiscoverScreen";
 
 //config
 import Colors from "../config/Colors";
 
 const Tab = createBottomTabNavigator();
-const SearchScreen = () => {
-  return null; // Return null for an empty screen
-};
+
 const NewPostScreen = () => {
   return null; // Return null for an empty screen
 };
@@ -62,8 +61,8 @@ export default function BottomTab() {
       />
 
       <Tab.Screen
-        name="SearchScreen"
-        component={SearchScreen}
+        name="DiscoverScreen"
+        component={DiscoverScreen}
         options={{
           tabBarLabel: "Discover",
           tabBarIcon: ({ color, size }) => (

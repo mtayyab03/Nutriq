@@ -16,7 +16,6 @@ import {
   AntDesign,
   Feather,
 } from "@expo/vector-icons";
-import { Calendar } from "react-native-calendars";
 
 //Components
 import Screen from "../../components/Screen";

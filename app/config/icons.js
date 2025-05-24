@@ -4,6 +4,8 @@ const profile1 = require("../../assets/images/profile1.png");
 const baseProfile = require("../../assets/images/baseProfile.png");
 const qstn = require("../../assets/images/qstn.png");
 const redqstn = require("../../assets/images/redqstn.png");
+const saladimg = require("../../assets/images/saladimg.png");
+const serve = require("../../assets/images/serve.png");
 
 export default {
   nutriqlogo,
@@ -12,4 +14,6 @@ export default {
   baseProfile,
   redqstn,
   qstn,
+  saladimg,
+  serve,
 };

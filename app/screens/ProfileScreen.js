@@ -10,7 +10,11 @@ import {
   TextInput,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import {
+  MaterialCommunityIcons,
+  MaterialIcons,
+  Fontisto,
+} from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 
@@ -26,7 +30,7 @@ import apiClient from "../apis/apiClient";
 import TitleFieldRow from "../components/TitleFieldRow";
 import AppButton from "../components/AppButton";
 
-const Profilescreen = (props) => {
+const Profilescreen = ({ navigation }) => {
   const [firstName, setFirstName] = useState("");
   const [surName, setSurName] = useState("");
   const [email, setEmail] = useState("");
@@ -92,20 +96,29 @@ const Profilescreen = (props) => {
           width: "100%",
           height: Platform.OS == "ios" ? RFPercentage(28) : RFPercentage(26),
           alignItems: "center",
-          justifyContent: "center",
           borderBottomLeftRadius: RFPercentage(5),
           borderBottomRightRadius: RFPercentage(5),
         }}
       >
         <View
           style={{
-            width: "90%",
+            width: "80%",
             alignItems: "center",
             justifyContent: "center",
             position: "absolute",
             bottom: RFPercentage(3),
           }}
         >
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate("NotificationScreen")}
+            style={{
+              width: "100%",
+              alignItems: "flex-end",
+            }}
+          >
+            <Fontisto color={Colors.white} size={28} name={"bell"} />
+          </TouchableOpacity>
           <View
             style={{
               alignItems: "center",
@@ -223,7 +236,7 @@ const Profilescreen = (props) => {
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => {
-              props.navigation.navigate("LoginScreen");
+              navigation.navigate("LoginScreen");
             }}
             style={{
               flexDirection: "row",
@@ -265,7 +278,7 @@ const Profilescreen = (props) => {
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => {
-              props.navigation.navigate("LoginScreen");
+              navigation.navigate("LoginScreen");
             }}
             style={{
               flexDirection: "row",

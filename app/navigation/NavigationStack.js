@@ -9,6 +9,8 @@ import CreateEventScreen from "../screens/Dietitian/CreateEventScreen";
 import CalendarEvent from "../screens/Dietitian/CalendarEvent";
 import ExistingContactsScreen from "../screens/Dietitian/ExistingContactsScreen";
 import ManageEvent from "../screens/Dietitian/ManageEvent";
+import RecipieScreen from "../screens/Patient/RecipieScreen";
+import NotificationScreen from "../screens/Patient/NotificationScreen";
 
 import BottomTab from "./BottomTab";
 
@@ -18,7 +20,7 @@ export default function NavigationStack() {
   return (
     <Stack.Navigator
       screenOptions={{ headerMode: "false" }}
-      initialRouteName={"CalendarScreen"}
+      initialRouteName={"BottomTab"}
     >
       {/* login */}
       <Stack.Screen
@@ -55,6 +57,16 @@ export default function NavigationStack() {
         options={{ headerShown: false }}
         name="ManageEvent"
         component={ManageEvent}
+      />
+      <Stack.Screen
+        options={{ headerShown: false }}
+        name="RecipieScreen"
+        component={RecipieScreen}
+      />
+      <Stack.Screen
+        options={{ headerShown: false }}
+        name="NotificationScreen"
+        component={NotificationScreen}
       />
 
       <Stack.Screen
