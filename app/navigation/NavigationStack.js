@@ -20,7 +20,7 @@ export default function NavigationStack() {
   return (
     <Stack.Navigator
       screenOptions={{ headerMode: "false" }}
-      initialRouteName={"BottomTab"}
+      initialRouteName={"SplashScreen"}
     >
       {/* login */}
       <Stack.Screen

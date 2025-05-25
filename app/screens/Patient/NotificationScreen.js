@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { AntDesign } from "@expo/vector-icons";
+import { AntDesign, Ionicons } from "@expo/vector-icons";
 
 //Cdnesdayomponents
 import Screen from "../../components/Screen";
@@ -22,6 +22,38 @@ import { FontFamily } from "../../config/font";
 import icons from "../../config/icons";
 
 const NotificationScreen = ({ navigation }) => {
+  const appointments = [
+    {
+      title: "Nutrition assessment booked on May 26",
+      date: "01/03/2025",
+      icon: "chatbox-ellipses-outline",
+    },
+    {
+      title: "Follow-up call scheduled for June 2",
+      date: "02/03/2025",
+      icon: "call-outline",
+    },
+    {
+      title: "Diet plan emailed",
+      date: "03/03/2025",
+      icon: "mail-outline",
+    },
+    {
+      title: "Initial consultation confirmed for August 15",
+      date: "15/08/2025",
+      icon: "chatbox-ellipses-outline",
+    },
+    {
+      title: "Progress review call scheduled for Sep 3",
+      date: "03/09/2025",
+      icon: "call-outline",
+    },
+    {
+      title: "Personalized meal plan delivered",
+      date: "05/09/2025",
+      icon: "mail-outline",
+    },
+  ];
   return (
     <Screen style={styles.screen}>
       <View style={styles.container}>
@@ -40,6 +72,24 @@ const NotificationScreen = ({ navigation }) => {
           <AntDesign color={Colors.blacky} size={24} name={"questioncircleo"} />
         </TouchableOpacity>
       </View>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        style={{ width: "100%" }}
+      >
+        {appointments.map((item, index) => (
+          <View key={index} style={styles.mainContainer}>
+            <View style={styles.iconContainer}>
+              <Ionicons color={Colors.primary} size={24} name={item.icon} />
+            </View>
+            <View style={{ marginLeft: RFPercentage(1.5) }}>
+              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.secTitle}>{item.date}</Text>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
     </Screen>
   );
 };
@@ -63,14 +113,42 @@ const styles = StyleSheet.create({
     width: 40, // same width as right placeholder to center text
     alignItems: "flex-start",
   },
-
+  scrollContent: {
+    paddingBottom: RFPercentage(5),
+    alignItems: "center",
+    justifyContent: "center",
+  },
   rightIcon: {
     width: 40, // keeps title centered
   },
   title: {
-    textAlign: "center",
     color: Colors.blacky,
     fontFamily: FontFamily.medium,
     fontSize: RFPercentage(2),
+  },
+  mainContainer: {
+    flexDirection: "row",
+    width: "90%",
+    alignItems: "center",
+    marginTop: RFPercentage(3),
+  },
+  iconContainer: {
+    width: RFPercentage(5),
+    height: RFPercentage(5),
+    borderRadius: RFPercentage(3),
+    backgroundColor: Colors.lightWhite,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  title: {
+    color: Colors.blacky,
+    fontFamily: FontFamily.medium,
+    fontSize: RFPercentage(1.5),
+  },
+  secTitle: {
+    marginTop: RFPercentage(0.5),
+    color: Colors.blacksuit,
+    fontFamily: FontFamily.regular,
+    fontSize: RFPercentage(1.3),
   },
 });
