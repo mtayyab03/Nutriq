@@ -8,13 +8,14 @@ import {
   ScrollView,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 //Cdnesdayomponents
 import Screen from "../components/Screen";
 import DatePicker from "../components/DatePicker";
 import BarText from "../components/BarText";
 import MealDef from "../components/Specific/MealDef";
+import DateSelectionModal from "../components/Specific/DateSelectionModal";
 
 // apis
 import apiClient from "../apis/apiClient";
@@ -39,19 +40,14 @@ const HomeScreen = () => {
   const [companyName, setCompanyName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [surName, setSurName] = useState("");
-
+  const [companyId, setCompanyId] = useState("");
   const [startingDate, setStartingDate] = useState("null");
   const [endingDate, setEndingDate] = useState("null");
-
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [date, setDate] = useState("");
-  const [error, setError] = useState({ date: false });
-
-  const handleDateChange = (formattedDate) => {
-    setDate(formattedDate);
-    console.log("Selected Date:", formattedDate);
-  };
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
+  const [allMealPlans, setAllMealPlans] = useState([]);
+  const [firstPlanId, setFirstPlanId] = useState("");
 
   const handlePreviousDay = () => {
     setCurrentDayIndex((prevIndex) =>
@@ -84,11 +80,11 @@ const HomeScreen = () => {
   useEffect(() => {
     const fetchMealData = async () => {
       try {
-        // Fetch company details
         const companyResponse = await apiClient.get("/client/companies");
 
-        if (companyResponse.data && companyResponse.data.length > 0) {
-          const { id: companyId, name } = companyResponse.data[0]; // Extract first company
+        if (companyResponse.data?.length > 0) {
+          const { id: companyId, name } = companyResponse.data[0];
+          setCompanyId(companyId);
           setCompanyName(name);
 
           console.log(`Fetching meals for Company: ${name} (ID: ${companyId})`);
@@ -97,45 +93,40 @@ const HomeScreen = () => {
             `/client/company/${companyId}/meal-plans`
           );
 
-          if (mealPlanResponse.data && mealPlanResponse.data.length > 0) {
-            const mealPlanId = mealPlanResponse.data[0].id; // Extract first meal plan ID
+          if (Array.isArray(mealPlanResponse.data)) {
+            const mealPlans = mealPlanResponse.data;
 
-            console.log(`Fetching meals for Meal Plan ID: ${mealPlanId}`);
+            const formattedPlans = mealPlans.map((plan) => ({
+              id: plan.id,
+              startingDate: new Date(plan.startingDate)
+                .toISOString()
+                .split("T")[0],
+              endingDate: new Date(plan.endingDate).toISOString().split("T")[0],
+            }));
 
+            setAllMealPlans(formattedPlans);
+
+            // Select first plan by default
+            const firstPlan = formattedPlans[0];
+            setStartingDate(firstPlan.startingDate);
+            setEndingDate(firstPlan.endingDate);
+            setFirstPlanId(firstPlan.id);
+
+            // Fetch meals for first plan
             const response = await apiClient.get(
-              `/client/company/${companyId}/meal-plans/${mealPlanId}`
+              `/client/company/${companyId}/meal-plans/${firstPlan.id}`
             );
-            // console.log("Meal plan data:", JSON.stringify(response.data, null, 2));
 
-            // Ensure the API response is properly formatted before setting state
-            if (response.data && Array.isArray(response.data.meals)) {
+            if (Array.isArray(response.data?.meals)) {
               setMealData(response.data.meals);
-              const formattedStartingDate = response.data.startingDate
-                ? new Date(response.data.startingDate)
-                    .toISOString()
-                    .split("T")[0]
-                : "YYYY-MM-DD"; // Default placeholder if null
-
-              const formattedEndingDate = response.data.endingDate
-                ? new Date(response.data.endingDate).toISOString().split("T")[0]
-                : "YYYY-MM-DD"; // Default placeholder if null
-
-              setStartingDate(formattedStartingDate);
-              setEndingDate(formattedEndingDate);
             } else {
               console.error("Unexpected API response format", response.data);
             }
           } else {
-            console.error(
-              "No meal plans found for company",
-              mealPlanResponse.data
-            );
+            console.error("No meal plans found", mealPlanResponse.data);
           }
         } else {
-          console.error(
-            "No companies found in response:",
-            companyResponse.data
-          );
+          console.error("No companies found", companyResponse.data);
         }
       } catch (error) {
         console.error("Error fetching meal data:", error);
@@ -146,6 +137,21 @@ const HomeScreen = () => {
 
     fetchMealData();
   }, []);
+
+  const fetchMealsForPlan = async (companyId, planId) => {
+    try {
+      const response = await apiClient.get(
+        `/client/company/${companyId}/meal-plans/${planId}`
+      );
+      if (Array.isArray(response.data?.meals)) {
+        setMealData(response.data.meals);
+      } else {
+        console.error("Unexpected meal data", response.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch meals for plan:", error);
+    }
+  };
 
   const currentDay = daysOfWeek[currentDayIndex].toUpperCase();
 
@@ -252,28 +258,101 @@ const HomeScreen = () => {
           justifyContent: "space-between",
         }}
       >
-        <DatePicker
-          width={"48%"}
-          titleSize={RFPercentage(1.2)}
-          borderColor={Colors.primary}
-          label="Starting Date"
-          placeholder={startingDate}
-          onDateChange={handleDateChange}
-          error={error}
-          setError={setError}
-          icon={"calendar-month-outline"}
-        />
-        <DatePicker
-          width={"48%"}
-          titleSize={RFPercentage(1.2)}
-          borderColor={Colors.primary}
-          label="Ending Date"
-          placeholder={endingDate}
-          onDateChange={handleDateChange}
-          error={error}
-          setError={setError}
-          icon={"calendar-month-outline"}
-        />
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => setIsModalVisible(true)}
+          style={{ width: "48%", marginTop: RFPercentage(1) }}
+        >
+          <Text
+            style={{
+              marginTop: RFPercentage(0.7),
+              color: Colors.blacky,
+              fontFamily: FontFamily.regular,
+              fontSize: RFPercentage(1.2),
+            }}
+          >
+            Starting Date
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              width: "100%",
+              backgroundColor: Colors.white,
+              borderWidth: RFPercentage(0.1),
+              borderColor: Colors.primary,
+              color: Colors.blacktext,
+              padding: RFPercentage(1.5),
+              alignItems: "center",
+              borderRadius: RFPercentage(1),
+              justifyContent: "space-between",
+              marginTop: RFPercentage(1),
+            }}
+          >
+            <Text
+              style={{
+                color: Colors.blacksuit,
+                fontFamily: FontFamily.medium,
+                fontSize: RFPercentage(1.4),
+              }}
+            >
+              {startingDate}
+            </Text>
+            <TouchableOpacity activeOpacity={0.7} style={styles.calendarIcon}>
+              <MaterialIcons
+                name={"keyboard-arrow-down"}
+                size={22}
+                color={Colors.gray}
+              />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          style={{ width: "48%", marginTop: RFPercentage(1) }}
+        >
+          <Text
+            style={{
+              marginTop: RFPercentage(0.7),
+              color: Colors.blacky,
+              fontFamily: FontFamily.regular,
+              fontSize: RFPercentage(1.2),
+            }}
+          >
+            Ending Date
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              width: "100%",
+              backgroundColor: Colors.white,
+              borderWidth: RFPercentage(0.1),
+              borderColor: Colors.primary,
+              color: Colors.blacktext,
+              padding: RFPercentage(1.5),
+              alignItems: "center",
+              borderRadius: RFPercentage(1),
+              justifyContent: "space-between",
+              marginTop: RFPercentage(1),
+            }}
+          >
+            <Text
+              style={{
+                color: Colors.blacksuit,
+                fontFamily: FontFamily.medium,
+                fontSize: RFPercentage(1.4),
+              }}
+            >
+              {endingDate}
+            </Text>
+            <TouchableOpacity activeOpacity={0.7} style={styles.calendarIcon}>
+              <MaterialIcons
+                name={"keyboard-arrow-down"}
+                size={22}
+                color={Colors.gray}
+              />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </View>
 
       <MealDef />
@@ -386,11 +465,11 @@ const HomeScreen = () => {
                   {recipeNames && (
                     <BarText barColor={Colors.brown} title={recipeNames} />
                   )}
-
-                  {meal.note && (
+                  {meal.note ? (
                     <BarText barColor={Colors.purple} title={meal.note} />
-                  )}
-                  {meal.energyKcal && (
+                  ) : null}
+
+                  {meal.energyKcal ? (
                     <View style={styles.CalContainer}>
                       <MaterialIcons
                         color={Colors.white}
@@ -401,7 +480,7 @@ const HomeScreen = () => {
                         {meal.energyKcal.toFixed(1)}
                       </Text>
                     </View>
-                  )}
+                  ) : null}
                 </View>
               </View>
             );
@@ -419,6 +498,24 @@ const HomeScreen = () => {
         )}
       </ScrollView>
       {/* meal detaile end */}
+
+      <DateSelectionModal
+        visible={isModalVisible}
+        setVisible={setIsModalVisible}
+        label="Starting Date"
+        plans={allMealPlans}
+        onSelectDate={(selectedDate) => {
+          const selectedPlan = allMealPlans.find(
+            (p) => p.startingDate === selectedDate
+          );
+          if (selectedPlan) {
+            setStartingDate(selectedPlan.startingDate);
+            setEndingDate(selectedPlan.endingDate); // Automatically set ending date
+            setFirstPlanId(selectedPlan.id);
+            fetchMealsForPlan(companyId, selectedPlan.id);
+          }
+        }}
+      />
     </Screen>
   );
 };

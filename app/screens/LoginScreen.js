@@ -66,7 +66,7 @@ export default function LoginScreen(props) {
       if (role === "CLIENT") {
         props.navigation.navigate("BottomTab", { screen: "HomeScreen" });
       } else if (role === "BASIC_PROF") {
-        props.navigation.navigate("CalendarScreen");
+        props.navigation.navigate("CalendarEvent");
       } else {
         Alert.alert("Login", "Your account role is not recognized.");
       }
