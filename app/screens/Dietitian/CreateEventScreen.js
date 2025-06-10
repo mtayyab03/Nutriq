@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Fontisto } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 
 //Components
 import Screen from "../../components/Screen";
@@ -30,7 +31,7 @@ import icons from "../../config/icons";
 import Colors from "../../config/Colors";
 import { FontFamily } from "../../config/font";
 
-const CreateEventScreen = ({ navigation }) => {
+const CreateEventScreen = ({ navigation, route }) => {
   const [title, setTitle] = useState(""); // Add loading state
   const [startingDate, setStartingDate] = useState("YYYY-MM-DD");
   const [date, setDate] = useState("");
@@ -41,6 +42,7 @@ const CreateEventScreen = ({ navigation }) => {
   const [endingTime, setEndingTime] = useState("HH:MM");
   const [isSwitchOn, setIsSwitchOn] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedContacts, setSelectedContacts] = useState([]); // [{ id, email }]
 
   const toggleSwitch = () => {
     setIsSwitchOn((prev) => !prev);
@@ -49,11 +51,38 @@ const CreateEventScreen = ({ navigation }) => {
     }
   };
 
+  const convertTo24Hour = (time) => {
+    // Normalize any non-breaking spaces
+    const cleanedTime = time.replace(/\s+/g, " ").trim(); // replaces multiple/unicode spaces with a regular space
+    const [timePart, modifier] = cleanedTime.split(" ");
+    if (!timePart || !modifier) return "00:00:00"; // fallback
+
+    const [hStr, mStr] = timePart.split(":");
+    let hours = parseInt(hStr, 10);
+    let minutes = parseInt(mStr, 10);
+
+    if (modifier.toLowerCase() === "pm" && hours < 12) hours += 12;
+    if (modifier.toLowerCase() === "am" && hours === 12) hours = 0;
+
+    const hh = hours.toString().padStart(2, "0");
+    const mm = minutes.toString().padStart(2, "0");
+
+    return `${hh}:${mm}:00`;
+  };
+
   const handleDateChange = (formattedDate) => {
     setDate(formattedDate);
     console.log("Selected Date:", formattedDate);
   };
-
+  const handleTimeChange = (value, type) => {
+    const formattedTime = convertTo24Hour(value);
+    console.log("Selected time:", type, value);
+    if (type === "startTime") {
+      setStartingTime(formattedTime);
+    } else {
+      setEndingTime(formattedTime);
+    }
+  };
   const selectTime = [
     {
       id: 1,
@@ -86,8 +115,80 @@ const CreateEventScreen = ({ navigation }) => {
   };
 
   const handleRemoveEmail = (index) => {
+    setSelectedContacts((prev) => prev.filter((_, i) => i !== index));
     setEmails(emails.filter((_, i) => i !== index));
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const contacts = route?.params?.selectedContacts || [];
+
+      if (contacts.length > 0) {
+        setSelectedContacts(contacts); // stores id + email
+        setEmails(contacts.map((c) => c.email)); // stores only emails
+      }
+    }, [route?.params?.selectedContacts])
+  );
+
+  const handleSubmit = async () => {
+    if (!date === "YYYY-MM-DD") {
+      alert("Please fill correct in the required fields.");
+      return;
+    }
+
+    try {
+      const allDay = menuid === 2;
+
+      // Separate userParticipants and clientParticipants based on contact status
+      const userParticipants = selectedContacts
+        .filter((c) => c.status === "colleague")
+        .map((c) => c.id);
+
+      const clientParticipants = selectedContacts
+        .filter((c) => c.status === "customer")
+        .map((c) => c.id);
+
+      // Get emails of all registered contacts
+      const registeredEmails = selectedContacts.map((c) => c.email);
+
+      // Filter out already registered emails from `emails`
+      const filteredUnregisteredEmails = emails.filter(
+        (email) => !registeredEmails.includes(email)
+      );
+
+      console.log("Raw Times => Start:", startingTime, "| End:", endingTime);
+      const payload = {
+        title: title,
+        startDate: date,
+        allDay: allDay,
+        notifyParticipants: isSwitchOn,
+        unregisteredEmails: filteredUnregisteredEmails,
+        userParticipants,
+        clientParticipants,
+      };
+
+      if (!allDay) {
+        payload.startTime = `${startingTime}`; // Format: HH:MM:SS
+        payload.endTime = `${endingTime}`;
+      }
+
+      console.log("Sending payload:", payload);
+
+      const response = await apiClient.post("/calendar", payload);
+
+      if (response.status === 201) {
+        alert("Event created successfully!");
+        navigation.navigate("CalendarEvent"); // or navigate wherever needed
+      } else {
+        console.log("Error:", response.data);
+        alert("Failed to create event.");
+      }
+    } catch (error) {
+      console.error("API Error:", error);
+      alert("An error occurred.");
+    }
+  };
+
   return (
     <Screen style={styles.screen}>
       <CommonHeader
@@ -127,42 +228,42 @@ const CreateEventScreen = ({ navigation }) => {
       />
 
       {/* time picker */}
-
-      <View
-        style={{
-          flexDirection: "row",
-          width: "90%",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          marginTop: RFPercentage(1),
-        }}
-      >
-        <DatePicker
-          width={"48%"}
-          titleSize={RFPercentage(1.6)}
-          borderColor={Colors.stroke}
-          isTimePicker={true}
-          label="Starting Time"
-          placeholder={startingTime}
-          onDateChange={handleDateChange}
-          error={error}
-          setError={setError}
-          icon={"clock-time-four-outline"}
-        />
-        <DatePicker
-          width={"48%"}
-          titleSize={RFPercentage(1.6)}
-          isTimePicker={true}
-          borderColor={Colors.stroke}
-          label="Ending Time"
-          placeholder={endingTime}
-          onDateChange={handleDateChange}
-          error={error}
-          setError={setError}
-          icon={"clock-time-four-outline"}
-        />
-      </View>
-
+      {menuid === 1 && (
+        <View
+          style={{
+            flexDirection: "row",
+            width: "90%",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            marginTop: RFPercentage(1),
+          }}
+        >
+          <DatePicker
+            width={"48%"}
+            titleSize={RFPercentage(1.6)}
+            borderColor={Colors.stroke}
+            isTimePicker={true}
+            label="Starting Time"
+            placeholder={startingTime}
+            onTimeChange={(value) => handleTimeChange(value, "startTime")}
+            error={error}
+            setError={setError}
+            icon={"clock-time-four-outline"}
+          />
+          <DatePicker
+            width={"48%"}
+            titleSize={RFPercentage(1.6)}
+            isTimePicker={true}
+            borderColor={Colors.stroke}
+            label="Ending Time"
+            placeholder={endingTime}
+            onTimeChange={(value) => handleTimeChange(value, "endTime")}
+            error={error}
+            setError={setError}
+            icon={"clock-time-four-outline"}
+          />
+        </View>
+      )}
       <View style={{ marginVertical: RFPercentage(4), width: "70%" }}>
         <AppLine />
       </View>
@@ -179,7 +280,11 @@ const CreateEventScreen = ({ navigation }) => {
           <Text style={styles.label}>Contacts</Text>
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => navigation.navigate("ExistingContactsScreen")}
+            onPress={() =>
+              navigation.navigate("ExistingContactsScreen", {
+                preSelectedContacts: selectedContacts,
+              })
+            }
           >
             <Text style={[styles.label, { fontFamily: FontFamily.medium }]}>
               Add Existing
@@ -254,7 +359,7 @@ const CreateEventScreen = ({ navigation }) => {
       </View>
 
       <TouchableOpacity
-        // onPress={() => navigation.navigate("CreateEventScreen")}
+        onPress={handleSubmit}
         style={[
           styles.loginbutton,
           { position: "absolute", bottom: RFPercentage(6) },
@@ -264,7 +369,6 @@ const CreateEventScreen = ({ navigation }) => {
         <AppButton title={"Save"} buttonColor={Colors.primary} />
       </TouchableOpacity>
 
-      {/* modal */}
       {/* modal */}
       <CommonModal
         isModalVisible={isModalVisible}
