@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Image, TouchableOpacity, StyleSheet, View, Text } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import {
-  Ionicons,
-  Fontisto,
-  MaterialCommunityIcons,
-  AntDesign,
-  Feather,
-} from "@expo/vector-icons";
+import { MaterialCommunityIcons, AntDesign, Feather } from "@expo/vector-icons";
 import { Calendar } from "react-native-calendars";
 
 //Components
@@ -94,6 +88,9 @@ const CalendarScreen = ({ navigation }) => {
           <Calendar
             onDayPress={(day) => {
               setSelectedDate(day.dateString);
+              navigation.navigate("CalendarEvent", {
+                selectedDate: day.dateString,
+              });
             }}
             markedDates={{
               ...Object.keys(events).reduce((acc, date) => {

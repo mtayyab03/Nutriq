@@ -15,7 +15,10 @@ import icons from "../../config/icons";
 import Colors from "../../config/Colors";
 import { FontFamily } from "../../config/font";
 
-const DietitianEvent = ({ month, day, eventTitle, time, onPress }) => {
+const DietitianEvent = ({ day, eventTitle, time, onPress }) => {
+  const dateObj = new Date(day);
+  const formattedMonth = dateObj.toLocaleString("default", { month: "short" }); // e.g., "May"
+  const formattedDay = dateObj.getDate(); // e.g., 27
   return (
     <View
       style={{
@@ -58,9 +61,9 @@ const DietitianEvent = ({ month, day, eventTitle, time, onPress }) => {
               textAlign: "center",
             }}
           >
-            {month}
+            {formattedMonth}
             {"\n"}
-            {day}
+            {formattedDay}
           </Text>
         </View>
         <View style={{ marginLeft: RFPercentage(1.5) }}>

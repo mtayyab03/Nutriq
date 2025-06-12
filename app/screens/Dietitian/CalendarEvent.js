@@ -10,18 +10,16 @@ import {
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { LinearGradient } from "expo-linear-gradient";
 import {
-  Ionicons,
-  Fontisto,
   MaterialCommunityIcons,
   AntDesign,
   Feather,
   MaterialIcons,
 } from "@expo/vector-icons";
-import { Calendar } from "react-native-calendars";
 import moment from "moment";
 //Components
 import Screen from "../../components/Screen";
 import AppButton from "../../components/AppButton";
+import DietitianEvent from "../../components/Specific/DietitianEvent";
 
 // apis
 import apiClient from "../../apis/apiClient";
@@ -30,51 +28,72 @@ import apiClient from "../../apis/apiClient";
 import icons from "../../config/icons";
 import Colors from "../../config/Colors";
 import { FontFamily } from "../../config/font";
-import DietitianEvent from "../../components/Specific/DietitianEvent";
 
-const CalendarEvent = ({ navigation }) => {
+const CalendarEvent = ({ navigation, route }) => {
+  const selectedDate = route.params?.selectedDate;
   const [selectedDayIndex, setSelectedDayIndex] = useState(null);
-  const daysInMay2025 = Array.from({ length: 31 }, (_, i) => {
-    const date = moment(`2025-05-${i + 1}`, "YYYY-MM-DD");
-    return {
-      day: date.format("D"), // "1", "2", ...
-      weekday: date.format("ddd"), // "Thu", "Fri", ...
-    };
-  });
+  const [eventsToday, setEventsToday] = useState([]);
+  const [eventsTomorrow, setEventsTomorrow] = useState([]);
+  const [selectedDayDate, setSelectedDayDate] = useState(null);
+  const [eventsForSelectedDay, setEventsForSelectedDay] = useState([]);
 
-  const eventData = [
-    {
-      id: "1",
-      month: "May",
-      day: "04",
-      eventTitle: "Diet Progress Check-in",
-      time: "09:00AM - 02:30PM",
-    },
-    {
-      id: "2",
-      month: "May",
-      day: "04",
-      eventTitle: "Q&A with Dietitian",
-      time: "10:00AM - 01:00PM",
-    },
-    {
-      id: "3",
-      month: "May",
-      day: "04",
-      eventTitle: "Follow-up Consultation",
-      time: "11:30AM - 03:00PM",
-    },
-    // Add more objects as needed...
-  ];
-  const eventDataTomorrow = [
-    {
-      id: "1",
-      month: "May",
-      day: "05",
-      eventTitle: "Health Report Review",
-      time: "09:00AM - 02:30PM",
-    },
-  ];
+  const [weekDays, setWeekDays] = useState([]);
+
+  useEffect(() => {
+    const currentDate = selectedDate || moment().format("YYYY-MM-DD");
+
+    const startOfWeek = moment(currentDate).startOf("week"); // Sunday
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const date = moment(startOfWeek).add(i, "days");
+      return {
+        date,
+        day: date.format("D"),
+        weekday: date.format("ddd"),
+      };
+    });
+
+    const index = days.findIndex((d) =>
+      d.date.isSame(moment(currentDate), "day")
+    );
+
+    setWeekDays(days);
+    setSelectedDayIndex(index);
+    setSelectedDayDate(moment(currentDate).format("YYYY-MM-DD")); // ensure string
+  }, [selectedDate]);
+
+  useEffect(() => {
+    if (!selectedDayDate) return;
+
+    const fetchEvents = async () => {
+      const tomorrow = moment(selectedDayDate)
+        .add(1, "day")
+        .format("YYYY-MM-DD");
+
+      try {
+        const [resToday, resTomorrow] = await Promise.all([
+          apiClient.get(`/calendar?date=${selectedDayDate}`),
+          apiClient.get(`/calendar?date=${tomorrow}`),
+        ]);
+
+        if (resToday.status === 200) {
+          setEventsForSelectedDay(resToday.data || []);
+        } else {
+          console.log("Error fetching selected day events:", resToday.problem);
+        }
+
+        if (resTomorrow.status === 200) {
+          setEventsTomorrow(resTomorrow.data || []);
+        } else {
+          console.log("Error fetching tomorrow's events:", resTomorrow.problem);
+        }
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      }
+    };
+
+    fetchEvents();
+  }, [selectedDayDate]);
+
   return (
     <Screen style={styles.screen}>
       <View
@@ -128,7 +147,7 @@ const CalendarEvent = ({ navigation }) => {
         }}
       >
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {daysInMay2025.map((item, index) => {
+          {weekDays.map((item, index) => {
             const isSelected = selectedDayIndex === index;
 
             const content = (
@@ -167,7 +186,10 @@ const CalendarEvent = ({ navigation }) => {
             return (
               <TouchableOpacity
                 key={index}
-                onPress={() => setSelectedDayIndex(index)}
+                onPress={() => {
+                  setSelectedDayIndex(index);
+                  setSelectedDayDate(item.date.format("YYYY-MM-DD"));
+                }}
                 style={{
                   marginLeft: RFPercentage(1.5),
                   borderRadius: RFPercentage(1),
@@ -214,56 +236,72 @@ const CalendarEvent = ({ navigation }) => {
 
       <View style={styles.dotContainer}>
         <View style={styles.dot} />
-        <Text style={styles.scheduleText}>Today Schedule (3)</Text>
+        <Text style={styles.scheduleText}>
+          Today Schedule ({eventsForSelectedDay.length})
+        </Text>
       </View>
 
-      <ScrollView
-        style={{ width: "100%", flexGrow: 0 }}
-        contentContainerStyle={{
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-        showsVerticalScrollIndicator={false}
-      >
-        {eventData.map((event) => (
-          <DietitianEvent
-            key={event.id}
-            month={event.month}
-            day={event.day}
-            eventTitle={event.eventTitle}
-            time={event.time}
-            onPress={() => navigation.navigate("ManageEvent")}
-          />
-        ))}
-      </ScrollView>
-
+      {eventsForSelectedDay.length === 0 ? (
+        <Text style={styles.noEventText}>No events for today</Text>
+      ) : (
+        <ScrollView
+          style={{ width: "100%", flexGrow: 0, maxHeight: RFPercentage(36) }}
+          contentContainerStyle={{
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          {eventsForSelectedDay.map((event) => (
+            <DietitianEvent
+              key={event.id}
+              day={moment(event.startDate).format("YYYY-MM-DD")} // Pass full date string
+              eventTitle={event.title}
+              time={`${event.startTime} - ${event.endTime}`}
+              onPress={() =>
+                navigation.navigate("CreateEventScreen", {
+                  eventId: event.id,
+                })
+              }
+            />
+          ))}
+        </ScrollView>
+      )}
       {/* tommorow Event */}
 
       <View style={styles.dotContainer}>
         <View style={styles.dot} />
-        <Text style={styles.scheduleText}>Tomorrow Schedule (1)</Text>
+        <Text style={styles.scheduleText}>
+          Tomorrow Schedule ({eventsTomorrow.length})
+        </Text>
       </View>
 
-      <ScrollView
-        style={{ width: "100%" }}
-        contentContainerStyle={{
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-        showsVerticalScrollIndicator={false}
-      >
-        {eventDataTomorrow.map((event) => (
-          <DietitianEvent
-            key={event.id}
-            month={event.month}
-            day={event.day}
-            eventTitle={event.eventTitle}
-            time={event.time}
-            onPress={() => navigation.navigate("ManageEvent")}
-          />
-        ))}
-      </ScrollView>
-
+      {eventsTomorrow.length === 0 ? (
+        <Text style={styles.noEventText}>No events for tomorrow</Text>
+      ) : (
+        <ScrollView
+          style={{ width: "100%", maxHeight: RFPercentage(36) }}
+          contentContainerStyle={{
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          {eventsTomorrow.map((event) => (
+            <DietitianEvent
+              key={event.id}
+              day={moment(event.startDate).format("YYYY-MM-DD")} // Pass full date string
+              eventTitle={event.title}
+              time={`${event.startTime} - ${event.endTime}`}
+              onPress={() =>
+                navigation.navigate("CreateEventScreen", {
+                  eventId: event.id,
+                })
+              }
+            />
+          ))}
+        </ScrollView>
+      )}
       <TouchableOpacity
         onPress={() => navigation.navigate("CreateEventScreen")}
         style={[
@@ -310,5 +348,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: RFPercentage(1.5),
+  },
+  noEventText: {
+    fontSize: RFPercentage(2),
+    fontFamily: FontFamily.medium,
+    color: Colors.red,
+    textAlign: "center",
+    marginVertical: RFPercentage(2),
   },
 });
