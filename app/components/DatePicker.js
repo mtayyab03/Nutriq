@@ -42,20 +42,6 @@ const DatePicker = ({
     setDatePickerVisibility(false);
   };
 
-  // const handleConfirm = (selectedDate) => {
-  //   hideDatePicker();
-  //   const formattedDate = `${selectedDate.getFullYear()}-${(
-  //     selectedDate.getMonth() + 1
-  //   )
-  //     .toString()
-  //     .padStart(2, "0")}-${selectedDate.getDate().toString().padStart(2, "0")}`;
-  //   setDate(formattedDate);
-  //   setSelectedDate(selectedDate);
-  //   if (onDateChange) {
-  //     onDateChange(formattedDate); // Pass the formatted date to the parent component
-  //   }
-  // };
-
   const handleConfirm = (selected) => {
     hideDatePicker();
     setSelectedDate(selected);
@@ -116,7 +102,7 @@ const DatePicker = ({
           }}
           value={date}
           placeholder={placeholder}
-          placeholderTextColor={Colors.stroke}
+          placeholderTextColor={Colors.blacky}
           style={styles.textInput}
           editable={false} // Prevent manual editing
         />
@@ -169,7 +155,7 @@ const DatePicker = ({
 const styles = StyleSheet.create({
   textInput: {
     flex: 1,
-    color: Colors.blacksuit,
+    color: Colors.blacky,
     fontSize: RFPercentage(1.4),
     fontFamily: FontFamily.regular,
   },

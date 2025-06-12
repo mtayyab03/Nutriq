@@ -92,7 +92,10 @@ const CalendarEvent = ({ navigation, route }) => {
     };
 
     fetchEvents();
-  }, [selectedDayDate]);
+    if (route.params?.refresh) {
+      navigation.setParams({ refresh: false }); // reset to prevent loop
+    }
+  }, [selectedDayDate, route.params?.refresh]);
 
   return (
     <Screen style={styles.screen}>

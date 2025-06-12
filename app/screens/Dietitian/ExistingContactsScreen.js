@@ -264,6 +264,7 @@ const ExistingContactsScreen = ({ navigation }) => {
 
           navigation.navigate("CreateEventScreen", {
             selectedContacts: selectedMapped,
+            ...(route.params?.eventId && { eventId: route.params.eventId }),
           });
         }}
       >

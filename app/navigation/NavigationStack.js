@@ -8,7 +8,6 @@ import CalendarScreen from "../screens/Dietitian/CalendarScreen";
 import CreateEventScreen from "../screens/Dietitian/CreateEventScreen";
 import CalendarEvent from "../screens/Dietitian/CalendarEvent";
 import ExistingContactsScreen from "../screens/Dietitian/ExistingContactsScreen";
-import ManageEvent from "../screens/Dietitian/ManageEvent";
 import RecipieScreen from "../screens/Patient/RecipieScreen";
 import NotificationScreen from "../screens/Patient/NotificationScreen";
 
@@ -52,11 +51,6 @@ export default function NavigationStack() {
         options={{ headerShown: false }}
         name="ExistingContactsScreen"
         component={ExistingContactsScreen}
-      />
-      <Stack.Screen
-        options={{ headerShown: false }}
-        name="ManageEvent"
-        component={ManageEvent}
       />
       <Stack.Screen
         options={{ headerShown: false }}

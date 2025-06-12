@@ -32,12 +32,12 @@ import Colors from "../../config/Colors";
 import { FontFamily } from "../../config/font";
 
 const CreateEventScreen = ({ navigation, route }) => {
+  const { eventId } = route.params || {};
   const [title, setTitle] = useState(""); // Add loading state
-  const [startingDate, setStartingDate] = useState("YYYY-MM-DD");
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState("YYYY-MM-DD");
   const [error, setError] = useState({ date: false });
   const [menuid, setmenuid] = useState(1);
-
+  const [isDelModalVisible, setIsDelModalVisible] = useState(false);
   const [startingTime, setStartingTime] = useState("HH:MM");
   const [endingTime, setEndingTime] = useState("HH:MM");
   const [isSwitchOn, setIsSwitchOn] = useState(false);
@@ -131,15 +131,14 @@ const CreateEventScreen = ({ navigation, route }) => {
   );
 
   const handleSubmit = async () => {
-    if (!date === "YYYY-MM-DD") {
-      alert("Please fill correct in the required fields.");
+    if (!date || date === "YYYY-MM-DD") {
+      alert("Please select a valid date.");
       return;
     }
 
     try {
       const allDay = menuid === 2;
 
-      // Separate userParticipants and clientParticipants based on contact status
       const userParticipants = selectedContacts
         .filter((c) => c.status === "colleague")
         .map((c) => c.id);
@@ -148,19 +147,15 @@ const CreateEventScreen = ({ navigation, route }) => {
         .filter((c) => c.status === "customer")
         .map((c) => c.id);
 
-      // Get emails of all registered contacts
       const registeredEmails = selectedContacts.map((c) => c.email);
-
-      // Filter out already registered emails from `emails`
       const filteredUnregisteredEmails = emails.filter(
         (email) => !registeredEmails.includes(email)
       );
 
-      console.log("Raw Times => Start:", startingTime, "| End:", endingTime);
       const payload = {
-        title: title,
+        title,
         startDate: date,
-        allDay: allDay,
+        allDay,
         notifyParticipants: isSwitchOn,
         unregisteredEmails: filteredUnregisteredEmails,
         userParticipants,
@@ -168,20 +163,21 @@ const CreateEventScreen = ({ navigation, route }) => {
       };
 
       if (!allDay) {
-        payload.startTime = `${startingTime}`; // Format: HH:MM:SS
-        payload.endTime = `${endingTime}`;
+        payload.startTime = startingTime;
+        payload.endTime = endingTime;
       }
 
       console.log("Sending payload:", payload);
 
-      const response = await apiClient.post("/calendar", payload);
+      const response = eventId
+        ? await apiClient.put(`/calendar/${eventId}`, payload)
+        : await apiClient.post("/calendar", payload);
 
-      if (response.status === 201) {
-        alert("Event created successfully!");
-        navigation.navigate("CalendarEvent"); // or navigate wherever needed
+      if (response.status === 200 || response.status === 201) {
+        alert(`Event ${eventId ? "updated" : "created"} successfully!`);
+        navigation.navigate("CalendarEvent", { refresh: true });
       } else {
-        console.log("Error:", response.data);
-        alert("Failed to create event.");
+        alert("Operation failed.");
       }
     } catch (error) {
       console.error("API Error:", error);
@@ -189,16 +185,74 @@ const CreateEventScreen = ({ navigation, route }) => {
     }
   };
 
+  useEffect(() => {
+    if (eventId) {
+      apiClient
+        .get(`/calendar/${eventId}`)
+        .then((res) => {
+          if (res.status === 200) {
+            const data = res.data;
+            setTitle(data.title || "");
+            setDate(data.startDate || "YYYY-MM-DD");
+            setStartingTime(data.startTime || "HH:MM");
+            setEndingTime(data.endTime || "HH:MM");
+            setIsSwitchOn(data.notifyParticipants || false);
+            setmenuid(data.allDay ? 2 : 1); // Assuming 2 = All Day
+
+            // Set unregistered emails
+            setEmails(data.unregisteredEmails || []);
+
+            // Combine both user and client participants into selectedContacts
+            const formattedContacts = [
+              ...(data.userParticipants || []).map((user) => ({
+                id: user.id,
+                email: user.email || "",
+                status: "colleague",
+              })),
+              ...(data.clientParticipants || []).map((client) => ({
+                id: client.id,
+                email: client.email,
+                status: "customer",
+              })),
+            ];
+            setSelectedContacts(formattedContacts);
+          }
+        })
+        .catch((error) => {
+          console.log("Error fetching event:", error);
+          alert("Failed to load event data.");
+        });
+    }
+  }, [eventId]);
+
+  const handleDelete = async () => {
+    setIsDelModalVisible(false); // Close modal immediately (optional UX)
+
+    try {
+      const response = await apiClient.delete(`/calendar/${eventId}`);
+      if (response.status === 204) {
+        alert("Event deleted successfully");
+        navigation.navigate("CalendarEvent", { refresh: true }); // navigate back and trigger refresh
+      } else {
+        console.log("Delete failed:", response.problem);
+        alert("Failed to delete event");
+      }
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      alert("An error occurred while deleting");
+    }
+  };
+
   return (
     <Screen style={styles.screen}>
       <CommonHeader
-        title="Create Event"
+        title={eventId ? "Manage Event" : "Create Event"}
         onBackPress={() => navigation.goBack()}
       />
       <View style={{ marginTop: RFPercentage(2) }} />
       <InputField
         title={"Title"}
-        placeTitle={"Enter Title "}
+        placeTitle={"Enter Title"}
         value={title}
         onChange={setTitle}
       />
@@ -209,7 +263,7 @@ const CreateEventScreen = ({ navigation, route }) => {
         borderColor={Colors.stroke}
         isTimePicker={false}
         label="Starting Date"
-        placeholder={startingDate}
+        placeholder={date}
         onDateChange={handleDateChange}
         error={error}
         setError={setError}
@@ -283,6 +337,7 @@ const CreateEventScreen = ({ navigation, route }) => {
             onPress={() =>
               navigation.navigate("ExistingContactsScreen", {
                 preSelectedContacts: selectedContacts,
+                ...(eventId && { eventId }),
               })
             }
           >
@@ -357,18 +412,53 @@ const CreateEventScreen = ({ navigation, route }) => {
           }}
         />
       </View>
+      {eventId ? (
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            width: "90%",
+            marginTop: RFPercentage(10),
+          }}
+        >
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={handleSubmit}
+            style={[
+              {
+                backgroundColor: Colors.primary,
+              },
+              styles.buttonContainer,
+            ]}
+          >
+            <Text style={styles.buttonText}>Edit</Text>
+          </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={handleSubmit}
-        style={[
-          styles.loginbutton,
-          { position: "absolute", bottom: RFPercentage(6) },
-        ]}
-        activeOpacity={0.7}
-      >
-        <AppButton title={"Save"} buttonColor={Colors.primary} />
-      </TouchableOpacity>
-
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setIsDelModalVisible(true)}
+            style={[
+              {
+                backgroundColor: Colors.red,
+              },
+              styles.buttonContainer,
+            ]}
+          >
+            <Text style={styles.buttonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <TouchableOpacity
+          onPress={handleSubmit}
+          style={[
+            styles.loginbutton,
+            { position: "absolute", bottom: RFPercentage(6) },
+          ]}
+          activeOpacity={0.7}
+        >
+          <AppButton title={"Save"} buttonColor={Colors.primary} />
+        </TouchableOpacity>
+      )}
       {/* modal */}
       <CommonModal
         isModalVisible={isModalVisible}
@@ -386,6 +476,21 @@ const CreateEventScreen = ({ navigation, route }) => {
           // Cancel: turn switch OFF + close modal
           setIsModalVisible(false);
           setIsSwitchOn(false);
+        }}
+      />
+
+      {/* modal */}
+      <CommonModal
+        isModalVisible={isDelModalVisible}
+        setIsModalVisible={setIsDelModalVisible}
+        image={icons.redqstn}
+        title={"Are you sure you want to Delete the Event ?"}
+        buttonpri={"Yes"}
+        buttonsec={"Cancel"}
+        onpressPri={handleDelete}
+        onpressSec={() => {
+          // Cancel: turn switch OFF + close modal
+          setIsDelModalVisible(false);
         }}
       />
     </Screen>
@@ -462,5 +567,18 @@ const styles = StyleSheet.create({
     fontSize: RFPercentage(1.4),
     fontFamily: FontFamily.regular,
     color: Colors.blacktext,
+  },
+  buttonContainer: {
+    paddingVertical: 13,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    marginRight: 10,
+    flex: 1,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: Colors.white,
+    fontFamily: FontFamily.regular,
+    fontSize: RFPercentage(1.8),
   },
 });
