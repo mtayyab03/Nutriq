@@ -1,22 +1,7 @@
 import React, { useState, useEffect } from "react";
-import {
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-  TextInput,
-} from "react-native";
+import { Image, StyleSheet, View, Text, ScrollView } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import {
-  Ionicons,
-  Fontisto,
-  MaterialCommunityIcons,
-  AntDesign,
-  Feather,
-  MaterialIcons,
-} from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 //Components
 import Screen from "../../components/Screen";
@@ -30,181 +15,150 @@ import icons from "../../config/icons";
 import Colors from "../../config/Colors";
 import { FontFamily } from "../../config/font";
 
-const RecipieScreen = ({ navigation }) => {
+const RecipieScreen = ({ navigation, route }) => {
+  const { recipeId, companyId } = route.params;
+  const [recipe, setRecipe] = useState(null);
+  useEffect(() => {
+    const fetchRecipe = async () => {
+      try {
+        const response = await apiClient.get(
+          `/client/company/${companyId}/recipes/${recipeId}`
+        );
+        if (response.status === 200) {
+          setRecipe(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching recipe:", error);
+      }
+    };
+
+    fetchRecipe();
+  }, [companyId, recipeId]);
+
+  if (!recipe) return null; // Or show loading indicator
+
   return (
     <Screen style={styles.screen}>
       <CommonHeader title="Recipie" onBackPress={() => navigation.goBack()} />
-
-      <Image
-        style={{
-          width: "90%",
-          height: RFPercentage(30),
-          borderRadius: RFPercentage(2),
-          marginTop: RFPercentage(2),
+      <ScrollView
+        contentContainerStyle={{
+          alignItems: "center",
+          justifyContent: "center",
         }}
-        source={icons.saladimg}
-        resizeMode="cover"
-      />
-      <View
-        style={{
-          width: "90%",
-          marginTop: RFPercentage(2),
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-        }}
+        showsVerticalScrollIndicator={false}
+        style={{ width: "100%" }}
       >
-        <Text
+        <Image
           style={{
-            color: Colors.blacky,
-            fontFamily: FontFamily.medium,
-            fontSize: RFPercentage(2.3),
+            width: "90%",
+            height: RFPercentage(30),
+            borderRadius: RFPercentage(2),
+            marginTop: RFPercentage(2),
           }}
-        >
-          Apple Crisp
-        </Text>
-
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <View
-            style={{
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
+          source={icons.saladimg}
+          resizeMode="cover"
+        />
+        <View style={styles.mainContainer}>
+          <View style={{ width: "50%" }}>
+            <Text
+              style={{
+                color: Colors.blacky,
+                fontFamily: FontFamily.medium,
+                fontSize: RFPercentage(2.3),
+              }}
+            >
+              {recipe.name}
+            </Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View
               style={{
-                flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <MaterialCommunityIcons
-                color={Colors.blacky}
-                size={18}
-                name={"clock-time-four-outline"}
-              />
-              <Text
-                style={{
-                  marginLeft: RFPercentage(0.5),
-                  color: Colors.blacky,
-                  fontFamily: FontFamily.regular,
-                  fontSize: RFPercentage(1.5),
-                }}
-              >
-                Time
+              <View style={styles.smallContainer}>
+                <MaterialCommunityIcons
+                  color={Colors.blacky}
+                  size={18}
+                  name={"clock-time-four-outline"}
+                />
+                <Text style={styles.smallText}>Time</Text>
+              </View>
+              <Text style={styles.TextOffer}>
+                {recipe.preparationTimeInMinutes} min
               </Text>
             </View>
-            <Text
-              style={{
-                marginTop: RFPercentage(0.5),
-                color: Colors.blacksuit,
-                fontFamily: FontFamily.regular,
-                fontSize: RFPercentage(1.2),
-              }}
-            >
-              45min
-            </Text>
           </View>
-        </View>
 
-        <View
-          style={{
-            marginLeft: RFPercentage(2),
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
           <View
             style={{
-              flexDirection: "row",
+              marginLeft: RFPercentage(2),
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <Image
-              style={{
-                width: RFPercentage(1.8),
-                height: RFPercentage(1.8),
-              }}
-              source={icons.serve}
-            />
-            <Text
-              style={{
-                marginLeft: RFPercentage(0.5),
-                color: Colors.blacky,
-                fontFamily: FontFamily.regular,
-                fontSize: RFPercentage(1.5),
-              }}
-            >
-              Servings
-            </Text>
+            <View style={styles.smallContainer}>
+              <Image
+                style={{
+                  width: RFPercentage(1.8),
+                  height: RFPercentage(1.8),
+                }}
+                source={icons.serve}
+              />
+              <Text style={styles.smallText}>Servings</Text>
+            </View>
+            <Text style={styles.TextOffer}>{recipe.servings} servings</Text>
           </View>
-          <Text
-            style={{
-              marginTop: RFPercentage(0.5),
-              color: Colors.blacksuit,
-              fontFamily: FontFamily.regular,
-              fontSize: RFPercentage(1.2),
-            }}
-          >
-            7 servings
+        </View>
+
+        <View style={styles.macroContainer}>
+          <Text style={styles.macroText}>Macros</Text>
+        </View>
+        <View
+          style={{
+            width: "90%",
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "space-between",
+          }}
+        >
+          <Text style={styles.nutritionText}>
+            E: {recipe.macros.total.energyKcal.toFixed(3)}kcal
+          </Text>
+          <Text style={styles.nutritionText}>
+            C: {recipe.macros.total.carbs.toFixed(3)}g
+          </Text>
+          <Text style={styles.nutritionText}>
+            P: {recipe.macros.total.protein.toFixed(3)}g
+          </Text>
+          <Text style={styles.nutritionText}>
+            F: {recipe.macros.total.fat.toFixed(3)}g
           </Text>
         </View>
-      </View>
 
-      <View style={styles.macroContainer}>
-        <Text style={styles.macroText}>Macros</Text>
-      </View>
-      <View
-        style={{
-          width: "90%",
-          alignItems: "center",
-          flexDirection: "row",
-          justifyContent: "space-between",
-        }}
-      >
-        <Text style={styles.nutritionText}>E: 1509.005kcal</Text>
-        <Text style={styles.nutritionText}>C: 110989.005g</Text>
-        <Text style={styles.nutritionText}>P: 289.87g</Text>
-        <Text style={styles.nutritionText}>F: 130.8734398g</Text>
-      </View>
-
-      <View style={{ width: "90%", marginTop: RFPercentage(1) }}>
-        <View style={[styles.macroContainer, { width: "40%" }]}>
-          <Text style={styles.macroText}>Ingredients</Text>
+        <View style={{ width: "90%", marginTop: RFPercentage(1) }}>
+          <View style={[styles.macroContainer, { width: "40%" }]}>
+            <Text style={styles.macroText}>Ingredients</Text>
+          </View>
         </View>
-      </View>
+        {recipe.ingredients.map((item, index) => (
+          <View key={index} style={styles.bulletContainer}>
+            <Text style={styles.dotText}>•</Text>
+            <Text style={styles.textBullet}>{item.food.name}</Text>
+          </View>
+        ))}
 
-      <View style={styles.bulletContainer}>
-        <Text style={styles.dotText}>•</Text>
-        <Text style={styles.textBullet}>
-          Fresh apples (e.g., Granny Smith or Honeycrisp)
-        </Text>
-      </View>
+        <View style={{ width: "90%", marginTop: RFPercentage(1) }}>
+          <View style={[styles.macroContainer, { width: "40%" }]}>
+            <Text style={styles.macroText}>Directions</Text>
+          </View>
 
-      <View style={styles.bulletContainer}>
-        <Text style={styles.dotText}>•</Text>
-        <Text style={styles.textBullet}>Brown sugar</Text>
-      </View>
-      <View style={styles.bulletContainer}>
-        <Text style={styles.dotText}>•</Text>
-        <Text style={styles.textBullet}>Granulated sugar</Text>
-      </View>
-      <View style={styles.bulletContainer}>
-        <Text style={styles.dotText}>•</Text>
-        <Text style={styles.textBullet}>Ground nutmeg (optional)</Text>
-      </View>
-
-      <View style={{ width: "90%", marginTop: RFPercentage(1) }}>
-        <View style={[styles.macroContainer, { width: "40%" }]}>
-          <Text style={styles.macroText}>Directions</Text>
+          <Text style={styles.textBullet}>
+            {recipe.preparationInstructions}
+          </Text>
         </View>
-
-        <Text style={styles.textBullet}>
-          Execution: We put 2 tablespoons of olive oil with the onion in the pan
-          over high heat to soften.
-        </Text>
-      </View>
+      </ScrollView>
     </Screen>
   );
 };
@@ -231,6 +185,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.blacky,
     borderRadius: RFPercentage(1),
   },
+  mainContainer: {
+    width: "90%",
+    marginTop: RFPercentage(2),
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
   macroText: {
     color: Colors.white,
     fontFamily: FontFamily.regular,
@@ -247,5 +208,22 @@ const styles = StyleSheet.create({
     color: Colors.blacky,
     fontFamily: FontFamily.regular,
     fontSize: RFPercentage(1.5),
+  },
+  smallText: {
+    marginLeft: RFPercentage(0.5),
+    color: Colors.blacky,
+    fontFamily: FontFamily.regular,
+    fontSize: RFPercentage(1.5),
+  },
+  TextOffer: {
+    marginTop: RFPercentage(0.5),
+    color: Colors.blacksuit,
+    fontFamily: FontFamily.regular,
+    fontSize: RFPercentage(1.2),
+  },
+  smallContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

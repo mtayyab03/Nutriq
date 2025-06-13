@@ -8,7 +8,6 @@ import {
   ScrollView,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
-import { MaterialIcons } from "@expo/vector-icons";
 
 //Cdnesdayomponents
 import Screen from "../../components/Screen";
@@ -22,68 +21,60 @@ import { FontFamily } from "../../config/font";
 import icons from "../../config/icons";
 
 const DiscoverScreen = ({ navigation }) => {
-  const [selected, setSelected] = useState("All");
+  const [foodItems, setFoodItems] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [companyId, setCompanyId] = useState(null);
 
   const categories = [
     "All",
     "Breakfast",
-    "Mid Morning Snack",
+    "Mid morning snack",
     "Lunch",
-    "Afternoon Snack",
+    "Afternoon snack",
     "Dinner",
   ];
 
-  const foodItems = [
-    {
-      id: 1,
-      image: icons.saladimg,
-      title: "Apple Crisp",
-      description: "It is a warm, comforting dessert made with apple & ...",
-      category: "Breakfast",
-    },
-    {
-      id: 2,
-      image: icons.saladimg,
-      title: "Chicken Salad",
-      description: "A healthy and delicious mix of chicken and greens.",
-      category: "Mid morning Snack",
-    },
-    {
-      id: 3,
-      image: icons.saladimg,
-      title: "Fruit Bowl",
-      description: "A fresh mix of seasonal fruits perfect for snacks.",
-      category: "Lunch",
-    },
-    {
-      id: 4,
-      image: icons.saladimg,
-      title: "Veggie Delight",
-      description: "Loaded with vegetables and flavors to energize you.",
-      category: "Dinner",
-    },
-    {
-      id: 5,
-      image: icons.saladimg,
-      title: "Russian Salad",
-      description: "A fresh mix of seasonal fruits perfect for snacks.",
-    },
-    {
-      id: 6,
-      image: icons.saladimg,
-      title: "Delight Yum",
-      description: "Loaded with vegetables and flavors to energize you.",
-      category: "Afternoon Snack",
-    },
-  ];
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      try {
+        // First, fetch the companies
+        const companyRes = await apiClient.get("/client/companies");
+
+        if (companyRes.status === 200 && companyRes.data.length > 0) {
+          const companyId = companyRes.data[0].id; // Assuming the first company is used
+          setCompanyId(companyId);
+
+          // Now fetch recipes using the companyId
+          const recipeRes = await apiClient.get(
+            `/client/company/${companyId}/recipes`
+          );
+
+          if (recipeRes?.data?.content) {
+            const data = recipeRes.data.content;
+
+            const parsed = data.map((item) => ({
+              id: item.id,
+              image: item.image || icons.saladimg,
+              title: item.name,
+              description: item.description,
+              categories: item.categories?.map((cat) => cat.value) || [],
+            }));
+
+            setFoodItems(parsed);
+          }
+        }
+      } catch (err) {
+        console.log("Error fetching recipes or companies:", err);
+      }
+    };
+
+    fetchRecipes();
+  }, []);
+
   const filteredItems =
-    selected.toLowerCase() === "all"
+    selectedCategory === "All"
       ? foodItems
-      : foodItems.filter(
-          (item) =>
-            item.category &&
-            item.category.toLowerCase() === selected.toLowerCase()
-        );
+      : foodItems.filter((item) => item.categories.includes(selectedCategory));
 
   return (
     <Screen style={styles.screen}>
@@ -119,14 +110,14 @@ const DiscoverScreen = ({ navigation }) => {
             <TouchableOpacity
               activeOpacity={0.7}
               key={item}
-              onPress={() => setSelected(item)}
+              onPress={() => setSelectedCategory(item)}
               style={[
                 styles.button,
                 {
                   backgroundColor:
-                    selected === item ? Colors.primary : "transparent",
+                    selectedCategory === item ? Colors.primary : "transparent",
                   borderColor:
-                    selected === item ? Colors.primary : Colors.stroke,
+                    selectedCategory === item ? Colors.primary : Colors.stroke,
                 },
               ]}
             >
@@ -134,7 +125,10 @@ const DiscoverScreen = ({ navigation }) => {
                 style={[
                   styles.buttonText,
                   {
-                    color: selected === item ? Colors.white : Colors.blacksuit,
+                    color:
+                      selectedCategory === item
+                        ? Colors.white
+                        : Colors.blacksuit,
                   },
                 ]}
               >
@@ -163,7 +157,12 @@ const DiscoverScreen = ({ navigation }) => {
             <TouchableOpacity
               key={item.id}
               activeOpacity={0.7}
-              onPress={() => navigation.navigate("RecipieScreen")}
+              onPress={() =>
+                navigation.navigate("RecipieScreen", {
+                  recipeId: item.id,
+                  companyId: companyId, // make sure this is available in your component state
+                })
+              }
               style={{
                 width: "48%",
                 borderWidth: 1,
@@ -171,7 +170,7 @@ const DiscoverScreen = ({ navigation }) => {
                 padding: RFPercentage(1),
                 borderRadius: RFPercentage(1),
                 alignItems: "center",
-                justifyContent: "center",
+                // justifyContent: "center",
                 marginVertical: RFPercentage(0.7),
               }}
             >
