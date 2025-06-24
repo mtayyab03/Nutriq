@@ -34,7 +34,7 @@ import { FontFamily } from "../../config/font";
 const CreateEventScreen = ({ navigation, route }) => {
   const { eventId } = route.params || {};
   const [title, setTitle] = useState(""); // Add loading state
-  const [date, setDate] = useState("YYYY-MM-DD");
+  const [date, setDate] = useState("DD-MM-YYYY");
   const [error, setError] = useState({ date: false });
   const [menuid, setmenuid] = useState(1);
   const [isDelModalVisible, setIsDelModalVisible] = useState(false);
@@ -119,6 +119,12 @@ const CreateEventScreen = ({ navigation, route }) => {
     setEmails(emails.filter((_, i) => i !== index));
   };
 
+  const reverseDateFormat = (dateStr) => {
+    // Expects "DD-MM-YYYY", returns "YYYY-MM-DD"
+    const [dd, mm, yyyy] = dateStr.split("-");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       const contacts = route?.params?.selectedContacts || [];
@@ -154,7 +160,7 @@ const CreateEventScreen = ({ navigation, route }) => {
 
       const payload = {
         title,
-        startDate: date,
+        startDate: reverseDateFormat(date),
         allDay,
         notifyParticipants: isSwitchOn,
         unregisteredEmails: filteredUnregisteredEmails,
@@ -193,7 +199,7 @@ const CreateEventScreen = ({ navigation, route }) => {
           if (res.status === 200) {
             const data = res.data;
             setTitle(data.title || "");
-            setDate(data.startDate || "YYYY-MM-DD");
+            setDate(reverseDateFormat(data.startDate) || "YYYY-MM-DD");
             setStartingTime(data.startTime || "HH:MM");
             setEndingTime(data.endTime || "HH:MM");
             setIsSwitchOn(data.notifyParticipants || false);
@@ -431,7 +437,7 @@ const CreateEventScreen = ({ navigation, route }) => {
               styles.buttonContainer,
             ]}
           >
-            <Text style={styles.buttonText}>Edit</Text>
+            <Text style={styles.buttonText}>Save</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

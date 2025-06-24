@@ -54,11 +54,10 @@ const DatePicker = ({
       setDate(formattedTime);
       if (onTimeChange) onTimeChange(formattedTime);
     } else {
-      const formattedDate = `${selected.getFullYear()}-${(
-        selected.getMonth() + 1
-      )
-        .toString()
-        .padStart(2, "0")}-${selected.getDate().toString().padStart(2, "0")}`;
+      const day = selected.getDate().toString().padStart(2, "0");
+      const month = (selected.getMonth() + 1).toString().padStart(2, "0");
+      const year = selected.getFullYear();
+      const formattedDate = `${day}-${month}-${year}`; // 👈 Reversed forma
       setDate(formattedDate);
       if (onDateChange) onDateChange(formattedDate);
     }
@@ -123,6 +122,7 @@ const DatePicker = ({
                 value={selectedDate}
                 mode={isTimePicker ? "time" : "date"}
                 display={isTimePicker ? "spinner" : "inline"}
+                minuteInterval={5}
                 onChange={(event, date) => {
                   if (date) handleConfirm(date);
                 }}
@@ -142,6 +142,7 @@ const DatePicker = ({
             value={selectedDate}
             mode={isTimePicker ? "time" : "date"}
             display="default"
+            minuteInterval={5}
             onChange={(event, date) => {
               if (date) handleConfirm(date);
             }}

@@ -54,7 +54,7 @@ const DiscoverScreen = ({ navigation }) => {
 
             const parsed = data.map((item) => ({
               id: item.id,
-              image: item.image || icons.saladimg,
+              image: item.image,
               title: item.name,
               description: item.description,
               categories: item.categories?.map((cat) => cat.value) || [],
@@ -174,15 +174,17 @@ const DiscoverScreen = ({ navigation }) => {
                 marginVertical: RFPercentage(0.7),
               }}
             >
-              <Image
-                style={{
-                  width: RFPercentage(18),
-                  height: RFPercentage(15),
-                  borderRadius: RFPercentage(1),
-                }}
-                source={item.image}
-                resizeMode="cover"
-              />
+              {item.image && (
+                <Image
+                  style={{
+                    width: RFPercentage(18),
+                    height: RFPercentage(15),
+                    borderRadius: RFPercentage(1),
+                  }}
+                  source={item.image}
+                  resizeMode="cover"
+                />
+              )}
               <View style={{ width: "100%" }}>
                 <Text
                   style={{

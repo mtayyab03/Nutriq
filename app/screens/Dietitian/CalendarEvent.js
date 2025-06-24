@@ -145,85 +145,86 @@ const CalendarEvent = ({ navigation, route }) => {
 
       <View
         style={{
-          width: "100%",
+          width: "90%",
           marginTop: RFPercentage(3),
+          flexDirection: "row",
+          alignItems: "center",
+          // backgroundColor: Colors.brown,
         }}
       >
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {weekDays.map((item, index) => {
-            const isSelected = selectedDayIndex === index;
+        {weekDays.map((item, index) => {
+          const isSelected = selectedDayIndex === index;
 
-            const content = (
-              <View
+          const content = (
+            <View
+              style={{
+                width: RFPercentage(5),
+                paddingHorizontal: RFPercentage(0.5),
+                paddingVertical: RFPercentage(1),
+                borderRadius: RFPercentage(1.5),
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text
                 style={{
-                  width: RFPercentage(6),
-                  paddingHorizontal: RFPercentage(0.5),
-                  paddingVertical: RFPercentage(1),
-                  borderRadius: RFPercentage(1.5),
-                  alignItems: "center",
-                  justifyContent: "center",
+                  color: isSelected ? Colors.white : Colors.stroke,
+                  fontFamily: FontFamily.regular,
+                  fontSize: RFPercentage(1.7),
                 }}
               >
-                <Text
-                  style={{
-                    color: isSelected ? Colors.white : Colors.stroke,
-                    fontFamily: FontFamily.regular,
-                    fontSize: RFPercentage(1.9),
-                  }}
-                >
-                  {item.weekday}
-                </Text>
-                <Text
-                  style={{
-                    marginTop: RFPercentage(1),
-                    color: Colors.blacky,
-                    fontFamily: FontFamily.medium,
-                    fontSize: RFPercentage(2.2),
-                  }}
-                >
-                  {item.day}
-                </Text>
-              </View>
-            );
-
-            return (
-              <TouchableOpacity
-                key={index}
-                onPress={() => {
-                  setSelectedDayIndex(index);
-                  setSelectedDayDate(item.date.format("YYYY-MM-DD"));
-                }}
+                {item.weekday}
+              </Text>
+              <Text
                 style={{
-                  marginLeft: RFPercentage(1.5),
-                  borderRadius: RFPercentage(1),
-                  overflow: "hidden",
+                  marginTop: RFPercentage(1),
+                  color: Colors.blacky,
+                  fontFamily: FontFamily.medium,
+                  fontSize: RFPercentage(2),
                 }}
               >
-                {isSelected ? (
-                  <LinearGradient
-                    colors={[Colors.lightgreen, Colors.primary]} // Define your two gradient colors here
-                    start={{ x: 0, y: 0 }} // Start point (top-left)
-                    end={{ x: 1, y: 1 }} // End point (bottom-right)
-                    style={{
-                      borderRadius: RFPercentage(1.2),
-                    }}
-                  >
-                    {content}
-                  </LinearGradient>
-                ) : (
-                  <View
-                    style={{
-                      backgroundColor: Colors.white,
-                      borderRadius: RFPercentage(1),
-                    }}
-                  >
-                    {content}
-                  </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+                {item.day}
+              </Text>
+            </View>
+          );
+
+          return (
+            <TouchableOpacity
+              key={index}
+              onPress={() => {
+                setSelectedDayIndex(index);
+                setSelectedDayDate(item.date.format("YYYY-MM-DD"));
+              }}
+              style={{
+                marginRight: RFPercentage(1.1),
+                borderRadius: RFPercentage(1),
+                overflow: "hidden",
+              }}
+            >
+              {isSelected ? (
+                <LinearGradient
+                  colors={[Colors.lightgreen, Colors.primary]} // Define your two gradient colors here
+                  start={{ x: 0, y: 0 }} // Start point (top-left)
+                  end={{ x: 1, y: 1 }} // End point (bottom-right)
+                  style={{
+                    borderRadius: RFPercentage(1.2),
+                  }}
+                >
+                  {content}
+                </LinearGradient>
+              ) : (
+                <View
+                  style={{
+                    backgroundColor: Colors.white,
+                    borderRadius: RFPercentage(1),
+                  }}
+                >
+                  {content}
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <View
@@ -260,7 +261,11 @@ const CalendarEvent = ({ navigation, route }) => {
               key={event.id}
               day={moment(event.startDate).format("YYYY-MM-DD")} // Pass full date string
               eventTitle={event.title}
-              time={`${event.startTime} - ${event.endTime}`}
+              time={
+                event.startTime && event.endTime
+                  ? `${event.startTime} - ${event.endTime}`
+                  : "All Day"
+              }
               onPress={() =>
                 navigation.navigate("CreateEventScreen", {
                   eventId: event.id,
@@ -295,7 +300,11 @@ const CalendarEvent = ({ navigation, route }) => {
               key={event.id}
               day={moment(event.startDate).format("YYYY-MM-DD")} // Pass full date string
               eventTitle={event.title}
-              time={`${event.startTime} - ${event.endTime}`}
+              time={
+                event.startTime && event.endTime
+                  ? `${event.startTime} - ${event.endTime}`
+                  : "All Day"
+              }
               onPress={() =>
                 navigation.navigate("CreateEventScreen", {
                   eventId: event.id,
