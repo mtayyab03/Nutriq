@@ -99,6 +99,7 @@ const DietitianEvent = ({ day, eventTitle, time, onPress }) => {
           borderRadius: RFPercentage(0.5),
           alignItems: "center",
           justifyContent: "center",
+          marginRight: RFPercentage(0.5),
         }}
       >
         <MaterialIcons color={Colors.white} size={12} name={"edit"} />

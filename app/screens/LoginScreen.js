@@ -112,7 +112,7 @@ export default function LoginScreen(props) {
             <View style={styles.inputmaincontainer}>
               <View style={styles.emailmain}>
                 <Ionicons
-                  color={Colors.blacksuit}
+                  color={Colors.blacky}
                   style={{ marginRight: RFPercentage(2) }}
                   size={RFPercentage(3)}
                   name={"mail"}
@@ -136,7 +136,7 @@ export default function LoginScreen(props) {
               <View style={{ marginTop: RFPercentage(2) }} />
               <View style={styles.emailmain}>
                 <Fontisto
-                  color={Colors.blacksuit}
+                  color={Colors.blacky}
                   style={{ marginRight: RFPercentage(2) }}
                   size={RFPercentage(3)}
                   name={"locked"}
@@ -157,7 +157,7 @@ export default function LoginScreen(props) {
                   style={styles.eyeicon}
                 >
                   <MaterialCommunityIcons
-                    color={Colors.lightBlack}
+                    color={Colors.blacksuit}
                     style={{ right: RFPercentage(1) }}
                     size={RFPercentage(3)}
                     name={eyeIcon ? "eye-outline" : "eye-off-outline"}
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   input: {
     width: "75%",
     fontFamily: FontFamily.regular,
-    color: Colors.blacksuit,
+    color: Colors.blacky,
     fontSize: RFPercentage(2),
   },
 

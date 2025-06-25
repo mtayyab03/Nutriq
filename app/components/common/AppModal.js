@@ -10,6 +10,7 @@ export default function AppModal({
   modalVisible,
   setModalVisible,
   style,
+  RecStyle,
 }) {
   return (
     <Modal
@@ -32,21 +33,24 @@ export default function AppModal({
         ]}
       >
         <View
-          style={{
-            width: "80%",
-            backgroundColor: "white",
-            borderRadius: 20,
-            padding: 35,
-            alignItems: "center",
-            shadowColor: "#000",
-            shadowOffset: {
-              width: 0,
-              height: 2,
+          style={[
+            {
+              width: "80%",
+              backgroundColor: "white",
+              borderRadius: 20,
+              padding: 35,
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: {
+                width: 0,
+                height: 2,
+              },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 5,
             },
-            shadowOpacity: 0.25,
-            shadowRadius: 4,
-            elevation: 5,
-          }}
+            RecStyle,
+          ]}
         >
           {children}
         </View>

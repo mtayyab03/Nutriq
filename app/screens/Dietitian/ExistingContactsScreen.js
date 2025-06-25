@@ -10,12 +10,15 @@ import {
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { useRoute } from "@react-navigation/native";
+import { Ionicons, Feather } from "@expo/vector-icons";
+
 //Components
 import Screen from "../../components/Screen";
 import CommonHeader from "../../components/common/CommonHeader";
 import SearchField from "../../components/SearchField";
 import AppLine from "../../components/AppLine";
 import AppButton from "../../components/AppButton";
+import AppModal from "../../components/common/AppModal";
 
 // apis
 import apiClient from "../../apis/apiClient";
@@ -29,6 +32,9 @@ const ExistingContactsScreen = ({ navigation }) => {
   const [searchText, setSearchText] = useState("");
   const [selectedFilter, setSelectedFilter] = useState(null);
   const [allContacts, setAllContacts] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState(null); // e.g., "customer"
+  const [selectedSortFilter, setSelectedSortFilter] = useState(null); // e.g., "asc"
   const [selectedContacts, setSelectedContacts] = useState([]); // store selected contact IDs
 
   useEffect(() => {
@@ -78,34 +84,35 @@ const ExistingContactsScreen = ({ navigation }) => {
     fetchContacts();
   }, []);
 
-  const categories = [
-    "Customer",
-    "Colleague",
-    "Ascending order",
-    "Descending order",
-    "Last Registered",
+  const filters = [
+    { id: 1, label: "Customer", type: "status", value: "customer" },
+    { id: 2, label: "Colleague", type: "status", value: "colleague" },
+    { id: 3, label: "Ascending order", type: "sort", value: "asc" },
+    { id: 4, label: "Descending order", type: "sort", value: "desc" },
+    { id: 5, label: "Last Registered", type: "sort", value: "latest" },
   ];
 
   // Apply filters + search
   const getFilteredContacts = () => {
     let filtered = [...allContacts];
 
-    // Apply filters
-    if (selectedFilter === "Customer") {
-      filtered = filtered.filter((c) => c.status === "customer");
-    } else if (selectedFilter === "Colleague") {
-      filtered = filtered.filter((c) => c.status === "colleague");
-    } else if (selectedFilter === "Ascending order") {
+    // Status filter
+    if (selectedStatusFilter) {
+      filtered = filtered.filter((c) => c.status === selectedStatusFilter);
+    }
+
+    // Sort filter
+    if (selectedSortFilter === "asc") {
       filtered.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (selectedFilter === "Descending order") {
+    } else if (selectedSortFilter === "desc") {
       filtered.sort((a, b) => b.name.localeCompare(a.name));
-    } else if (selectedFilter === "Last Registered") {
+    } else if (selectedSortFilter === "latest") {
       filtered.sort(
         (a, b) => new Date(b.registerDate) - new Date(a.registerDate)
       );
     }
 
-    // Apply search
+    // Search filter
     if (searchText.trim() !== "") {
       filtered = filtered.filter(
         (c) =>
@@ -148,50 +155,66 @@ const ExistingContactsScreen = ({ navigation }) => {
 
       <View
         style={{
-          width: "100%",
-          marginVertical: RFPercentage(2),
+          flexDirection: "row",
+          width: "90%",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
-        <ScrollView
-          style={{ width: "100%" }}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            marginLeft: RFPercentage(2),
-            paddingRight: RFPercentage(2),
+        <View
+          style={{
+            width: "60%",
+            marginVertical: RFPercentage(2),
+            flexDirection: "row",
           }}
         >
-          {categories.map((item) => (
-            <TouchableOpacity
-              activeOpacity={0.7}
-              key={item}
-              onPress={() =>
-                setSelectedFilter(item === selectedFilter ? null : item)
-              }
-              style={[
-                styles.button,
-                {
-                  backgroundColor:
-                    selectedFilter === item ? Colors.primary : "transparent",
-                  borderColor:
-                    selectedFilter === item ? Colors.primary : Colors.stroke,
-                },
-              ]}
-            >
-              <Text
+          {filters
+            .filter((f) => f.type === "status")
+            .map((item) => (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                key={item.id}
+                onPress={() =>
+                  setSelectedStatusFilter(
+                    selectedStatusFilter === item.value ? null : item.value
+                  )
+                }
                 style={[
-                  styles.buttonText,
+                  styles.button,
                   {
-                    color:
-                      selectedFilter === item ? Colors.white : Colors.blacksuit,
+                    backgroundColor:
+                      selectedStatusFilter === item.value
+                        ? Colors.primary
+                        : "transparent",
+                    borderColor:
+                      selectedStatusFilter === item.value
+                        ? Colors.primary
+                        : Colors.stroke,
                   },
                 ]}
               >
-                {item}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <Text
+                  style={[
+                    styles.buttonText,
+                    {
+                      color:
+                        selectedStatusFilter === item.value
+                          ? Colors.white
+                          : Colors.blacksuit,
+                    },
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+        </View>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => setIsModalVisible(true)}
+        >
+          <Ionicons color={Colors.blacky} size={28} name={"filter"} />
+        </TouchableOpacity>
       </View>
       <AppLine />
 
@@ -270,6 +293,63 @@ const ExistingContactsScreen = ({ navigation }) => {
       >
         <AppButton title={"Save"} buttonColor={Colors.primary} />
       </TouchableOpacity>
+
+      {/* modal */}
+      <AppModal
+        modalVisible={isModalVisible}
+        setModalVisible={setIsModalVisible}
+        style={{ alignItems: "center", justifyContent: "center" }}
+        RecStyle={{ width: "60%" }}
+      >
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => {
+            setIsModalVisible(false);
+          }}
+          style={{
+            width: "100%",
+            justifyContent: "flex-end",
+            alignItems: "flex-end",
+          }}
+        >
+          <Feather name={"x"} size={22} color={Colors.blacksuit} />
+        </TouchableOpacity>
+        <Text
+          style={{
+            marginBottom: RFPercentage(1),
+            color: Colors.primary,
+            fontFamily: FontFamily.regular,
+            fontSize: RFPercentage(2),
+          }}
+        >
+          Filters
+        </Text>
+        {filters
+          .filter((f) => f.type === "sort")
+          .map((filter) => (
+            <TouchableOpacity
+              key={filter.id}
+              activeOpacity={0.7}
+              onPress={() => {
+                setSelectedSortFilter(
+                  selectedSortFilter === filter.value ? null : filter.value
+                );
+                setIsModalVisible(false);
+              }}
+            >
+              <Text
+                style={{
+                  marginVertical: 5,
+                  color: Colors.blacky,
+                  fontFamily: FontFamily.regular,
+                  fontSize: RFPercentage(1.5),
+                }}
+              >
+                {filter.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+      </AppModal>
     </Screen>
   );
 };

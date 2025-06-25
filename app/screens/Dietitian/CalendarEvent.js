@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Image,
   TouchableOpacity,
@@ -32,17 +32,21 @@ import { FontFamily } from "../../config/font";
 const CalendarEvent = ({ navigation, route }) => {
   const selectedDate = route.params?.selectedDate;
   const [selectedDayIndex, setSelectedDayIndex] = useState(null);
-  const [eventsToday, setEventsToday] = useState([]);
-  const [eventsTomorrow, setEventsTomorrow] = useState([]);
   const [selectedDayDate, setSelectedDayDate] = useState(null);
   const [eventsForSelectedDay, setEventsForSelectedDay] = useState([]);
+  const [allEventsByDate, setAllEventsByDate] = useState([]); // [{ date: "YYYY-MM-DD", events: [...] }]
+  const [loadedDays, setLoadedDays] = useState(0); // how many 5-day chunks we've loaded
 
   const [weekDays, setWeekDays] = useState([]);
+  const scrollRef = useRef(null);
+  const sectionRefs = useRef({});
 
+  // Handles initial load and when selectedDate from route.params changes
   useEffect(() => {
-    const currentDate = selectedDate || moment().format("YYYY-MM-DD");
+    const currentDate =
+      route.params?.selectedDate || moment().format("YYYY-MM-DD");
 
-    const startOfWeek = moment(currentDate).startOf("week"); // Sunday
+    const startOfWeek = moment(currentDate).startOf("week");
     const days = Array.from({ length: 7 }, (_, i) => {
       const date = moment(startOfWeek).add(i, "days");
       return {
@@ -58,44 +62,90 @@ const CalendarEvent = ({ navigation, route }) => {
 
     setWeekDays(days);
     setSelectedDayIndex(index);
-    setSelectedDayDate(moment(currentDate).format("YYYY-MM-DD")); // ensure string
-  }, [selectedDate]);
+    setSelectedDayDate(moment(currentDate).format("YYYY-MM-DD"));
+
+    // Also fetch fresh events whenever selected date changes from route
+    fetchNextNDaysEvents(currentDate, 5, currentDate, true);
+  }, [route.params?.selectedDate]);
 
   useEffect(() => {
-    if (!selectedDayDate) return;
+    const initialDate = selectedDate || moment().format("YYYY-MM-DD");
+    setSelectedDayDate(initialDate);
+    fetchNextNDaysEvents(initialDate, 5, initialDate, true); // ← reset
+  }, []);
 
-    const fetchEvents = async () => {
-      const tomorrow = moment(selectedDayDate)
-        .add(1, "day")
-        .format("YYYY-MM-DD");
+  const fetchNextNDaysEvents = async (
+    startDate,
+    daysToFetch = 5,
+    scrollToDate = null,
+    shouldReset = false
+  ) => {
+    const eventPromises = [];
 
-      try {
-        const [resToday, resTomorrow] = await Promise.all([
-          apiClient.get(`/calendar?date=${selectedDayDate}`),
-          apiClient.get(`/calendar?date=${tomorrow}`),
-        ]);
-
-        if (resToday.status === 200) {
-          setEventsForSelectedDay(resToday.data || []);
-        } else {
-          console.log("Error fetching selected day events:", resToday.problem);
-        }
-
-        if (resTomorrow.status === 200) {
-          setEventsTomorrow(resTomorrow.data || []);
-        } else {
-          console.log("Error fetching tomorrow's events:", resTomorrow.problem);
-        }
-      } catch (error) {
-        console.error("Error fetching events:", error);
-      }
-    };
-
-    fetchEvents();
-    if (route.params?.refresh) {
-      navigation.setParams({ refresh: false }); // reset to prevent loop
+    for (let i = 0; i < daysToFetch; i++) {
+      const date = moment(startDate).add(i, "days").format("YYYY-MM-DD");
+      eventPromises.push(apiClient.get(`/calendar?date=${date}`));
     }
-  }, [selectedDayDate, route.params?.refresh]);
+
+    const results = await Promise.all(eventPromises);
+
+    const fetchedData = results
+      .map((res, index) => {
+        const date = moment(startDate).add(index, "days").format("YYYY-MM-DD");
+        if (res.status === 200 && res.data.length > 0) {
+          return { date, events: res.data };
+        } else {
+          return null;
+        }
+      })
+      .filter(Boolean);
+
+    setAllEventsByDate((prev) => {
+      const existingDates = shouldReset
+        ? new Set()
+        : new Set(prev.map((item) => item.date));
+      const combined = shouldReset ? [] : [...prev];
+
+      const newUniqueData = fetchedData.filter(
+        (item) => !existingDates.has(item.date)
+      );
+
+      const merged = [...combined, ...newUniqueData];
+
+      // Sort by date ascending
+      merged.sort((a, b) => moment(a.date).diff(moment(b.date)));
+
+      return merged;
+    });
+
+    if (shouldReset) {
+      setLoadedDays(daysToFetch);
+    } else {
+      setLoadedDays((prev) => prev + daysToFetch);
+    }
+
+    // Scroll to selected section
+    setTimeout(() => {
+      if (scrollRef.current && sectionRefs.current[scrollToDate]) {
+        sectionRefs.current[scrollToDate].measureLayout(
+          scrollRef.current,
+          (x, y) => {
+            scrollRef.current.scrollTo({ y, animated: true });
+          },
+          (error) => {
+            console.warn("Measure layout failed", error);
+          }
+        );
+      }
+    }, 300);
+  };
+
+  useEffect(() => {
+    if (route.params?.refresh) {
+      fetchNextNDaysEvents(selectedDayDate, 5, selectedDayDate, true);
+      navigation.setParams({ refresh: false });
+    }
+  }, [route.params?.refresh]);
 
   return (
     <Screen style={styles.screen}>
@@ -193,7 +243,11 @@ const CalendarEvent = ({ navigation, route }) => {
               key={index}
               onPress={() => {
                 setSelectedDayIndex(index);
-                setSelectedDayDate(item.date.format("YYYY-MM-DD"));
+                const selected = item.date.format("YYYY-MM-DD");
+                setSelectedDayDate(selected);
+
+                // Reset and refetch starting from new selected date
+                fetchNextNDaysEvents(selected, 5, selected, true);
               }}
               style={{
                 marginRight: RFPercentage(1.1),
@@ -238,82 +292,71 @@ const CalendarEvent = ({ navigation, route }) => {
 
       {/* events */}
 
-      <View style={styles.dotContainer}>
-        <View style={styles.dot} />
-        <Text style={styles.scheduleText}>
-          Today Schedule ({eventsForSelectedDay.length})
-        </Text>
-      </View>
+      <ScrollView
+        style={{ width: "100%", flexGrow: 1 }}
+        contentContainerStyle={{
+          alignItems: "center",
+          justifyContent: "center",
+          paddingBottom: RFPercentage(8),
+        }}
+        showsVerticalScrollIndicator={false}
+        onScroll={({ nativeEvent }) => {
+          const bottomReached =
+            nativeEvent.layoutMeasurement.height +
+              nativeEvent.contentOffset.y >=
+            nativeEvent.contentSize.height - 20;
+          if (bottomReached) {
+            const nextDate = moment(selectedDayDate)
+              .add(loadedDays, "days")
+              .format("YYYY-MM-DD");
+            fetchNextNDaysEvents(nextDate, 5);
+          }
+        }}
+        scrollEventThrottle={400}
+      >
+        {allEventsByDate.map(({ date, events }) => (
+          <View
+            key={date}
+            ref={(ref) => {
+              if (ref) {
+                sectionRefs.current[date] = ref;
+              }
+            }}
+          >
+            <View style={styles.dotContainer}>
+              <View style={styles.dot} />
+              <Text style={styles.scheduleText}>
+                {moment(date).isSame(moment(), "day")
+                  ? `Today Schedule (${events.length})`
+                  : `${moment(date).format("dddd")} Schedule (${
+                      events.length
+                    })`}
+              </Text>
+            </View>
 
-      {eventsForSelectedDay.length === 0 ? (
-        <Text style={styles.noEventText}>No events for today</Text>
-      ) : (
-        <ScrollView
-          style={{ width: "100%", flexGrow: 0, maxHeight: RFPercentage(36) }}
-          contentContainerStyle={{
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          {eventsForSelectedDay.map((event) => (
-            <DietitianEvent
-              key={event.id}
-              day={moment(event.startDate).format("YYYY-MM-DD")} // Pass full date string
-              eventTitle={event.title}
-              time={
-                event.startTime && event.endTime
-                  ? `${event.startTime} - ${event.endTime}`
-                  : "All Day"
-              }
-              onPress={() =>
-                navigation.navigate("CreateEventScreen", {
-                  eventId: event.id,
-                })
-              }
-            />
-          ))}
-        </ScrollView>
-      )}
+            {events.map((event) => (
+              <DietitianEvent
+                key={event.id}
+                day={moment(event.startDate).format("YYYY-MM-DD")} // Pass full date string
+                eventTitle={event.title}
+                time={
+                  event.startTime && event.endTime
+                    ? `${event.startTime} - ${event.endTime}`
+                    : "All Day"
+                }
+                onPress={() =>
+                  navigation.navigate("CreateEventScreen", {
+                    eventId: event.id,
+                  })
+                }
+              />
+            ))}
+          </View>
+        ))}
+      </ScrollView>
+
       {/* tommorow Event */}
 
-      <View style={styles.dotContainer}>
-        <View style={styles.dot} />
-        <Text style={styles.scheduleText}>
-          Tomorrow Schedule ({eventsTomorrow.length})
-        </Text>
-      </View>
-
-      {eventsTomorrow.length === 0 ? (
-        <Text style={styles.noEventText}>No events for tomorrow</Text>
-      ) : (
-        <ScrollView
-          style={{ width: "100%", maxHeight: RFPercentage(36) }}
-          contentContainerStyle={{
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          {eventsTomorrow.map((event) => (
-            <DietitianEvent
-              key={event.id}
-              day={moment(event.startDate).format("YYYY-MM-DD")} // Pass full date string
-              eventTitle={event.title}
-              time={
-                event.startTime && event.endTime
-                  ? `${event.startTime} - ${event.endTime}`
-                  : "All Day"
-              }
-              onPress={() =>
-                navigation.navigate("CreateEventScreen", {
-                  eventId: event.id,
-                })
-              }
-            />
-          ))}
-        </ScrollView>
-      )}
       <TouchableOpacity
         onPress={() => navigation.navigate("CreateEventScreen")}
         style={[
