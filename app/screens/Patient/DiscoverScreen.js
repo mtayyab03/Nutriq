@@ -11,6 +11,7 @@ import { RFPercentage } from "react-native-responsive-fontsize";
 
 //Cdnesdayomponents
 import Screen from "../../components/Screen";
+import AppLoading from "../../components/AppLoading";
 
 // apis
 import apiClient from "../../apis/apiClient";
@@ -24,6 +25,7 @@ const DiscoverScreen = ({ navigation }) => {
   const [foodItems, setFoodItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [companyId, setCompanyId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const categories = [
     "All",
@@ -37,6 +39,7 @@ const DiscoverScreen = ({ navigation }) => {
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
+        setIsLoading(true); // Start loading
         // First, fetch the companies
         const companyRes = await apiClient.get("/client/companies");
 
@@ -65,6 +68,8 @@ const DiscoverScreen = ({ navigation }) => {
         }
       } catch (err) {
         console.log("Error fetching recipes or companies:", err);
+      } finally {
+        setIsLoading(false); // Stop loading
       }
     };
 
@@ -140,78 +145,82 @@ const DiscoverScreen = ({ navigation }) => {
       </View>
 
       {/* recipies */}
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        style={{ width: "100%" }}
-      >
-        <View
-          style={{
-            width: "90%",
-            flexDirection: "row",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-          }}
+      {isLoading ? (
+        <AppLoading />
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          style={{ width: "100%" }}
         >
-          {filteredItems.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              activeOpacity={0.7}
-              onPress={() =>
-                navigation.navigate("RecipieScreen", {
-                  recipeId: item.id,
-                  companyId: companyId, // make sure this is available in your component state
-                })
-              }
-              style={{
-                width: "48%",
-                borderWidth: 1,
-                borderColor: Colors.stroke,
-                padding: RFPercentage(1),
-                borderRadius: RFPercentage(1),
-                alignItems: "center",
-                // justifyContent: "center",
-                marginVertical: RFPercentage(0.7),
-              }}
-            >
-              {item.image && (
-                <Image
-                  style={{
-                    width: RFPercentage(18),
-                    height: RFPercentage(15),
-                    borderRadius: RFPercentage(1),
-                  }}
-                  source={item.image}
-                  resizeMode="cover"
-                />
-              )}
-              <View style={{ width: "100%" }}>
-                <Text
-                  style={{
-                    marginTop: RFPercentage(0.5),
-                    color: Colors.blacky,
-                    fontFamily: FontFamily.medium,
-                    fontSize: RFPercentage(1.8),
-                  }}
-                >
-                  {item.title}
-                </Text>
-                <Text
-                  style={{
-                    marginTop: RFPercentage(0.5),
-                    color: Colors.blacksuit,
-                    fontFamily: FontFamily.regular,
-                    fontSize: RFPercentage(1.2),
-                  }}
-                >
-                  {item.description.split(" ").slice(0, 10).join(" ") +
-                    (item.description.split(" ").length > 10 ? " ..." : "")}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+          <View
+            style={{
+              width: "90%",
+              flexDirection: "row",
+              flexWrap: "wrap",
+              justifyContent: "space-between",
+            }}
+          >
+            {filteredItems.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                activeOpacity={0.7}
+                onPress={() =>
+                  navigation.navigate("RecipieScreen", {
+                    recipeId: item.id,
+                    companyId: companyId, // make sure this is available in your component state
+                  })
+                }
+                style={{
+                  width: "48%",
+                  borderWidth: 1,
+                  borderColor: Colors.stroke,
+                  padding: RFPercentage(1),
+                  borderRadius: RFPercentage(1),
+                  alignItems: "center",
+                  // justifyContent: "center",
+                  marginVertical: RFPercentage(0.7),
+                }}
+              >
+                {item.image && (
+                  <Image
+                    style={{
+                      width: RFPercentage(18),
+                      height: RFPercentage(15),
+                      borderRadius: RFPercentage(1),
+                    }}
+                    source={item.image}
+                    resizeMode="cover"
+                  />
+                )}
+                <View style={{ width: "100%" }}>
+                  <Text
+                    style={{
+                      marginTop: RFPercentage(0.5),
+                      color: Colors.blacky,
+                      fontFamily: FontFamily.medium,
+                      fontSize: RFPercentage(1.8),
+                    }}
+                  >
+                    {item.title}
+                  </Text>
+                  <Text
+                    style={{
+                      marginTop: RFPercentage(0.5),
+                      color: Colors.blacksuit,
+                      fontFamily: FontFamily.regular,
+                      fontSize: RFPercentage(1.2),
+                    }}
+                  >
+                    {item.description.split(" ").slice(0, 10).join(" ") +
+                      (item.description.split(" ").length > 10 ? " ..." : "")}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      )}
     </Screen>
   );
 };

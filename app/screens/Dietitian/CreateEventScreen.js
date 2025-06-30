@@ -22,6 +22,7 @@ import DatePicker from "../../components/DatePicker";
 import AppLine from "../../components/AppLine";
 import RadioButton from "../../components/common/RadioButton";
 import CommonModal from "../../components/Specific/CommonModal";
+import CustomAlert from "../../components/common/CustomAlert";
 
 // apis
 import apiClient from "../../apis/apiClient";
@@ -43,6 +44,9 @@ const CreateEventScreen = ({ navigation, route }) => {
   const [isSwitchOn, setIsSwitchOn] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState([]); // [{ id, email }]
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertType, setAlertType] = useState("");
 
   const toggleSwitch = () => {
     setIsSwitchOn((prev) => !prev);
@@ -180,8 +184,14 @@ const CreateEventScreen = ({ navigation, route }) => {
         : await apiClient.post("/calendar", payload);
 
       if (response.status === 200 || response.status === 201) {
-        alert(`Event ${eventId ? "updated" : "created"} successfully!`);
-        navigation.navigate("CalendarEvent", { refresh: true });
+        setAlertMessage(
+          `Event ${eventId ? "updated" : "created"} successfully!`
+        );
+        setAlertType("success"); // Success type
+        setAlertVisible(true);
+        setTimeout(() => {
+          navigation.navigate("CalendarEvent", { refresh: true });
+        }, 4000); // 5000 ms = 5 seconds
       } else {
         alert("Operation failed.");
       }
@@ -232,16 +242,21 @@ const CreateEventScreen = ({ navigation, route }) => {
   }, [eventId]);
 
   const handleDelete = async () => {
-    setIsDelModalVisible(false); // Close modal immediately (optional UX)
+    // setIsDelModalVisible(false); // Close modal immediately (optional UX)
 
     try {
       const response = await apiClient.delete(`/calendar/${eventId}`);
       if (response.status === 204) {
-        alert("Event deleted successfully");
-        navigation.navigate("CalendarEvent", { refresh: true }); // navigate back and trigger refresh
+        setAlertMessage("Event deleted successfully");
+        setAlertType("error");
+        setAlertVisible(true);
+        setTimeout(() => {
+          navigation.navigate("CalendarEvent", { refresh: true });
+        }, 4000); // 5000 ms = 5 seconds
       } else {
-        console.log("Delete failed:", response.problem);
-        alert("Failed to delete event");
+        setAlertMessage("Failed to delete event");
+        setAlertType("error");
+        setAlertVisible(true);
       }
     } catch (error) {
       console.error("Error deleting event:", error);
@@ -424,7 +439,9 @@ const CreateEventScreen = ({ navigation, route }) => {
             flexDirection: "row",
             justifyContent: "space-between",
             width: "90%",
-            marginTop: RFPercentage(10),
+            // marginTop: RFPercentage(10),
+            position: "absolute",
+            bottom: RFPercentage(6),
           }}
         >
           <TouchableOpacity
@@ -442,7 +459,7 @@ const CreateEventScreen = ({ navigation, route }) => {
 
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => setIsDelModalVisible(true)}
+            onPress={handleDelete}
             style={[
               {
                 backgroundColor: Colors.red,
@@ -486,7 +503,7 @@ const CreateEventScreen = ({ navigation, route }) => {
       />
 
       {/* modal */}
-      <CommonModal
+      {/* <CommonModal
         isModalVisible={isDelModalVisible}
         setIsModalVisible={setIsDelModalVisible}
         image={icons.redqstn}
@@ -498,6 +515,14 @@ const CreateEventScreen = ({ navigation, route }) => {
           // Cancel: turn switch OFF + close modal
           setIsDelModalVisible(false);
         }}
+      /> */}
+
+      {/* Alert */}
+      <CustomAlert
+        message={alertMessage}
+        visible={alertVisible}
+        type={alertType} // "success" or "error"
+        onClose={() => setAlertVisible(false)}
       />
     </Screen>
   );

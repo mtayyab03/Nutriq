@@ -19,6 +19,7 @@ import SearchField from "../../components/SearchField";
 import AppLine from "../../components/AppLine";
 import AppButton from "../../components/AppButton";
 import AppModal from "../../components/common/AppModal";
+import AppLoading from "../../components/AppLoading";
 
 // apis
 import apiClient from "../../apis/apiClient";
@@ -30,6 +31,7 @@ import { FontFamily } from "../../config/font";
 
 const ExistingContactsScreen = ({ navigation }) => {
   const [searchText, setSearchText] = useState("");
+  const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState(null);
   const [allContacts, setAllContacts] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -78,6 +80,8 @@ const ExistingContactsScreen = ({ navigation }) => {
         setAllContacts([...colleagues, ...customers]);
       } catch (error) {
         console.error("Error fetching contacts or user profile:", error);
+      } finally {
+        setLoading(false); // ✅ stop loading
       }
     };
 
@@ -218,56 +222,60 @@ const ExistingContactsScreen = ({ navigation }) => {
       </View>
       <AppLine />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        style={{ width: "100%" }}
-      >
-        {filteredContacts.map((item, index) => (
-          <TouchableOpacity
-            activeOpacity={0.7}
-            key={index}
-            style={{ width: "100%", alignItems: "center" }}
-            onPress={() => toggleContactSelection(item.id)}
-          >
-            <View style={styles.mainContainer}>
-              <Image
-                style={{
-                  width: RFPercentage(6),
-                  height: RFPercentage(6),
-                  borderRadius: RFPercentage(5),
-                }}
-                source={item.image}
-              />
-              <View style={{ marginLeft: RFPercentage(1.5) }}>
-                <Text style={styles.title}>{item.name}</Text>
-                <Text style={styles.secTitle}>{item.mail}</Text>
-              </View>
-
-              {selectedContacts.includes(item.id) && (
-                <Text
+      {loading ? (
+        <AppLoading />
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          style={{ width: "100%" }}
+        >
+          {filteredContacts.map((item, index) => (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              key={index}
+              style={{ width: "100%", alignItems: "center" }}
+              onPress={() => toggleContactSelection(item.id)}
+            >
+              <View style={styles.mainContainer}>
+                <Image
                   style={{
-                    marginLeft: "auto",
-                    color: Colors.primary,
-                    fontWeight: "bold",
-                    fontSize: RFPercentage(2),
+                    width: RFPercentage(6),
+                    height: RFPercentage(6),
+                    borderRadius: RFPercentage(5),
                   }}
-                >
-                  ✓
-                </Text>
-              )}
-            </View>
-            <View
-              style={{
-                width: "90%",
-                backgroundColor: Colors.lightWhite,
-                height: RFPercentage(0.06),
-                marginTop: RFPercentage(2),
-              }}
-            />
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+                  source={item.image}
+                />
+                <View style={{ marginLeft: RFPercentage(1.5) }}>
+                  <Text style={styles.title}>{item.name}</Text>
+                  <Text style={styles.secTitle}>{item.mail}</Text>
+                </View>
+
+                {selectedContacts.includes(item.id) && (
+                  <Text
+                    style={{
+                      marginLeft: "auto",
+                      color: Colors.primary,
+                      fontWeight: "bold",
+                      fontSize: RFPercentage(2),
+                    }}
+                  >
+                    ✓
+                  </Text>
+                )}
+              </View>
+              <View
+                style={{
+                  width: "90%",
+                  backgroundColor: Colors.lightWhite,
+                  height: RFPercentage(0.06),
+                  marginTop: RFPercentage(2),
+                }}
+              />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
 
       <TouchableOpacity
         style={[

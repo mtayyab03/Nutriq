@@ -20,6 +20,7 @@ import moment from "moment";
 import Screen from "../../components/Screen";
 import AppButton from "../../components/AppButton";
 import DietitianEvent from "../../components/Specific/DietitianEvent";
+import AppLoading from "../../components/AppLoading";
 
 // apis
 import apiClient from "../../apis/apiClient";
@@ -36,7 +37,8 @@ const CalendarEvent = ({ navigation, route }) => {
   const [eventsForSelectedDay, setEventsForSelectedDay] = useState([]);
   const [allEventsByDate, setAllEventsByDate] = useState([]); // [{ date: "YYYY-MM-DD", events: [...] }]
   const [loadedDays, setLoadedDays] = useState(0); // how many 5-day chunks we've loaded
-
+  const [isLoading, setIsLoading] = useState(false); // For UI display
+  const [initialLoadDone, setInitialLoadDone] = useState(false); // To track first fetch
   const [weekDays, setWeekDays] = useState([]);
   const scrollRef = useRef(null);
   const sectionRefs = useRef({});
@@ -80,66 +82,77 @@ const CalendarEvent = ({ navigation, route }) => {
     scrollToDate = null,
     shouldReset = false
   ) => {
-    const eventPromises = [];
+    if (!initialLoadDone) setIsLoading(true); // ✅ Only on initial fetch
+    try {
+      const eventPromises = [];
 
-    for (let i = 0; i < daysToFetch; i++) {
-      const date = moment(startDate).add(i, "days").format("YYYY-MM-DD");
-      eventPromises.push(apiClient.get(`/calendar?date=${date}`));
-    }
-
-    const results = await Promise.all(eventPromises);
-
-    const fetchedData = results
-      .map((res, index) => {
-        const date = moment(startDate).add(index, "days").format("YYYY-MM-DD");
-        if (res.status === 200 && res.data.length > 0) {
-          return { date, events: res.data };
-        } else {
-          return null;
-        }
-      })
-      .filter(Boolean);
-
-    setAllEventsByDate((prev) => {
-      const existingDates = shouldReset
-        ? new Set()
-        : new Set(prev.map((item) => item.date));
-      const combined = shouldReset ? [] : [...prev];
-
-      const newUniqueData = fetchedData.filter(
-        (item) => !existingDates.has(item.date)
-      );
-
-      const merged = [...combined, ...newUniqueData];
-
-      // Sort by date ascending
-      merged.sort((a, b) => moment(a.date).diff(moment(b.date)));
-
-      return merged;
-    });
-
-    if (shouldReset) {
-      setLoadedDays(daysToFetch);
-    } else {
-      setLoadedDays((prev) => prev + daysToFetch);
-    }
-
-    // Scroll to selected section
-    setTimeout(() => {
-      if (scrollRef.current && sectionRefs.current[scrollToDate]) {
-        sectionRefs.current[scrollToDate].measureLayout(
-          scrollRef.current,
-          (x, y) => {
-            scrollRef.current.scrollTo({ y, animated: true });
-          },
-          (error) => {
-            console.warn("Measure layout failed", error);
-          }
-        );
+      for (let i = 0; i < daysToFetch; i++) {
+        const date = moment(startDate).add(i, "days").format("YYYY-MM-DD");
+        eventPromises.push(apiClient.get(`/calendar?date=${date}`));
       }
-    }, 300);
-  };
 
+      const results = await Promise.all(eventPromises);
+
+      const fetchedData = results
+        .map((res, index) => {
+          const date = moment(startDate)
+            .add(index, "days")
+            .format("YYYY-MM-DD");
+          if (res.status === 200 && res.data.length > 0) {
+            return { date, events: res.data };
+          } else {
+            return null;
+          }
+        })
+        .filter(Boolean);
+
+      setAllEventsByDate((prev) => {
+        const existingDates = shouldReset
+          ? new Set()
+          : new Set(prev.map((item) => item.date));
+        const combined = shouldReset ? [] : [...prev];
+
+        const newUniqueData = fetchedData.filter(
+          (item) => !existingDates.has(item.date)
+        );
+
+        const merged = [...combined, ...newUniqueData];
+
+        // Sort by date ascending
+        merged.sort((a, b) => moment(a.date).diff(moment(b.date)));
+
+        return merged;
+      });
+
+      if (shouldReset) {
+        setLoadedDays(daysToFetch);
+      } else {
+        setLoadedDays((prev) => prev + daysToFetch);
+      }
+
+      // Scroll to selected section
+      setTimeout(() => {
+        if (scrollRef.current && sectionRefs.current[scrollToDate]) {
+          sectionRefs.current[scrollToDate].measureLayout(
+            scrollRef.current,
+            (x, y) => {
+              scrollRef.current.scrollTo({ y, animated: true });
+            },
+            (error) => {
+              console.warn("Measure layout failed", error);
+            }
+          );
+        }
+      }, 300);
+    } catch (err) {
+      console.error("Failed to fetch events:", err);
+    } finally {
+      if (!initialLoadDone) {
+        setIsLoading(false); // ✅ Only stop loading after initial fetch
+        setInitialLoadDone(true); // ✅ Mark initial fetch complete
+      }
+    }
+  };
   useEffect(() => {
     if (route.params?.refresh) {
       fetchNextNDaysEvents(selectedDayDate, 5, selectedDayDate, true);
@@ -161,9 +174,9 @@ const CalendarEvent = ({ navigation, route }) => {
         <TouchableOpacity
           style={styles.leftIcon}
           activeOpacity={0.7}
-          onPress={() => navigation.goBack()}
+          // onPress={() => navigation.goBack()}
         >
-          <AntDesign color={Colors.blacky} size={24} name={"arrowleft"} />
+          <AntDesign color={Colors.white} size={24} name={"arrowleft"} />
         </TouchableOpacity>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Text
@@ -291,70 +304,72 @@ const CalendarEvent = ({ navigation, route }) => {
       />
 
       {/* events */}
+      {isLoading ? (
+        <AppLoading />
+      ) : (
+        <ScrollView
+          style={{ width: "100%", flexGrow: 1 }}
+          contentContainerStyle={{
+            alignItems: "center",
+            justifyContent: "center",
+            paddingBottom: RFPercentage(8),
+          }}
+          showsVerticalScrollIndicator={false}
+          onScroll={({ nativeEvent }) => {
+            const bottomReached =
+              nativeEvent.layoutMeasurement.height +
+                nativeEvent.contentOffset.y >=
+              nativeEvent.contentSize.height - 20;
+            if (bottomReached) {
+              const nextDate = moment(selectedDayDate)
+                .add(loadedDays, "days")
+                .format("YYYY-MM-DD");
+              fetchNextNDaysEvents(nextDate, 5);
+            }
+          }}
+          scrollEventThrottle={400}
+        >
+          {allEventsByDate.map(({ date, events }) => (
+            <View
+              key={date}
+              ref={(ref) => {
+                if (ref) {
+                  sectionRefs.current[date] = ref;
+                }
+              }}
+            >
+              <View style={styles.dotContainer}>
+                <View style={styles.dot} />
+                <Text style={styles.scheduleText}>
+                  {moment(date).isSame(moment(), "day")
+                    ? `Today Schedule (${events.length})`
+                    : `${moment(date).format("dddd")} Schedule (${
+                        events.length
+                      })`}
+                </Text>
+              </View>
 
-      <ScrollView
-        style={{ width: "100%", flexGrow: 1 }}
-        contentContainerStyle={{
-          alignItems: "center",
-          justifyContent: "center",
-          paddingBottom: RFPercentage(8),
-        }}
-        showsVerticalScrollIndicator={false}
-        onScroll={({ nativeEvent }) => {
-          const bottomReached =
-            nativeEvent.layoutMeasurement.height +
-              nativeEvent.contentOffset.y >=
-            nativeEvent.contentSize.height - 20;
-          if (bottomReached) {
-            const nextDate = moment(selectedDayDate)
-              .add(loadedDays, "days")
-              .format("YYYY-MM-DD");
-            fetchNextNDaysEvents(nextDate, 5);
-          }
-        }}
-        scrollEventThrottle={400}
-      >
-        {allEventsByDate.map(({ date, events }) => (
-          <View
-            key={date}
-            ref={(ref) => {
-              if (ref) {
-                sectionRefs.current[date] = ref;
-              }
-            }}
-          >
-            <View style={styles.dotContainer}>
-              <View style={styles.dot} />
-              <Text style={styles.scheduleText}>
-                {moment(date).isSame(moment(), "day")
-                  ? `Today Schedule (${events.length})`
-                  : `${moment(date).format("dddd")} Schedule (${
-                      events.length
-                    })`}
-              </Text>
+              {events.map((event) => (
+                <DietitianEvent
+                  key={event.id}
+                  day={moment(event.startDate).format("YYYY-MM-DD")} // Pass full date string
+                  eventTitle={event.title}
+                  time={
+                    event.startTime && event.endTime
+                      ? `${event.startTime} - ${event.endTime}`
+                      : "All Day"
+                  }
+                  onPress={() =>
+                    navigation.navigate("CreateEventScreen", {
+                      eventId: event.id,
+                    })
+                  }
+                />
+              ))}
             </View>
-
-            {events.map((event) => (
-              <DietitianEvent
-                key={event.id}
-                day={moment(event.startDate).format("YYYY-MM-DD")} // Pass full date string
-                eventTitle={event.title}
-                time={
-                  event.startTime && event.endTime
-                    ? `${event.startTime} - ${event.endTime}`
-                    : "All Day"
-                }
-                onPress={() =>
-                  navigation.navigate("CreateEventScreen", {
-                    eventId: event.id,
-                  })
-                }
-              />
-            ))}
-          </View>
-        ))}
-      </ScrollView>
-
+          ))}
+        </ScrollView>
+      )}
       {/* tommorow Event */}
 
       <TouchableOpacity

@@ -7,7 +7,7 @@ import Colors from "../config/Colors";
 export default function AppLoading() {
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItem: "center" }}>
-      <ActivityIndicator color={Colors.primary} />
+      <ActivityIndicator color={Colors.primary} size={50} />
     </View>
   );
 }
