@@ -10,7 +10,7 @@ export default function AppLine() {
     <View
       style={{
         width: "100%",
-        height: RFPercentage(0.06),
+        height: RFPercentage(0.1),
         backgroundColor: Colors.lightWhite,
         borderRadius: RFPercentage(0.5),
       }}

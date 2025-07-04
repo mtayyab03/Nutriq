@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Image,
   TouchableOpacity,
@@ -8,6 +8,8 @@ import {
   ScrollView,
   TextInput,
   Switch,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Fontisto } from "@expo/vector-icons";
@@ -33,6 +35,7 @@ import Colors from "../../config/Colors";
 import { FontFamily } from "../../config/font";
 
 const CreateEventScreen = ({ navigation, route }) => {
+  const scrollRef = useRef(null);
   const { eventId } = route.params || {};
   const [title, setTitle] = useState(""); // Add loading state
   const [date, setDate] = useState("DD-MM-YYYY");
@@ -59,7 +62,7 @@ const CreateEventScreen = ({ navigation, route }) => {
     // Normalize any non-breaking spaces
     const cleanedTime = time.replace(/\s+/g, " ").trim(); // replaces multiple/unicode spaces with a regular space
     const [timePart, modifier] = cleanedTime.split(" ");
-    if (!timePart || !modifier) return "00:00:00"; // fallback
+    if (!timePart || !modifier) return "00:00"; // fallback
 
     const [hStr, mStr] = timePart.split(":");
     let hours = parseInt(hStr, 10);
@@ -71,7 +74,7 @@ const CreateEventScreen = ({ navigation, route }) => {
     const hh = hours.toString().padStart(2, "0");
     const mm = minutes.toString().padStart(2, "0");
 
-    return `${hh}:${mm}:00`;
+    return `${hh}:${mm}`;
   };
 
   const handleDateChange = (formattedDate) => {
@@ -142,7 +145,9 @@ const CreateEventScreen = ({ navigation, route }) => {
 
   const handleSubmit = async () => {
     if (!date || date === "YYYY-MM-DD") {
-      alert("Please select a valid date.");
+      setAlertMessage("Please select a valid date.");
+      setAlertType("error");
+      setAlertVisible(true);
       return;
     }
 
@@ -193,11 +198,14 @@ const CreateEventScreen = ({ navigation, route }) => {
           navigation.navigate("CalendarEvent", { refresh: true });
         }, 4000); // 5000 ms = 5 seconds
       } else {
-        alert("Operation failed.");
+        setAlertMessage("Operation failed.");
+        setAlertType("error");
+        setAlertVisible(true);
       }
     } catch (error) {
-      console.error("API Error:", error);
-      alert("An error occurred.");
+      setAlertMessage("An error occurred.");
+      setAlertType("error");
+      setAlertVisible(true);
     }
   };
 
@@ -236,13 +244,15 @@ const CreateEventScreen = ({ navigation, route }) => {
         })
         .catch((error) => {
           console.log("Error fetching event:", error);
-          alert("Failed to load event data.");
+          setAlertMessage("Failed to load event data.");
+          setAlertType("error");
+          setAlertVisible(true);
         });
     }
   }, [eventId]);
 
   const handleDelete = async () => {
-    // setIsDelModalVisible(false); // Close modal immediately (optional UX)
+    setIsDelModalVisible(false);
 
     try {
       const response = await apiClient.delete(`/calendar/${eventId}`);
@@ -260,271 +270,291 @@ const CreateEventScreen = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error("Error deleting event:", error);
-      alert("An error occurred while deleting");
+      setAlertMessage("An error occurred while deleting");
+      setAlertType("error");
+      setAlertVisible(true);
     }
   };
 
   return (
-    <Screen style={styles.screen}>
-      <CommonHeader
-        title={eventId ? "Manage Event" : "Create Event"}
-        onBackPress={() => navigation.goBack()}
-      />
-      <View style={{ marginTop: RFPercentage(2) }} />
-      <InputField
-        title={"Title"}
-        placeTitle={"Enter Title"}
-        value={title}
-        onChange={setTitle}
-      />
-
-      <DatePicker
-        titleSize={RFPercentage(1.6)}
-        width={"90%"}
-        borderColor={Colors.stroke}
-        isTimePicker={false}
-        label="Starting Date"
-        placeholder={date}
-        onDateChange={handleDateChange}
-        error={error}
-        setError={setError}
-        icon={"calendar-month-outline"}
-      />
-
-      <View style={{ marginVertical: RFPercentage(4), width: "70%" }}>
-        <AppLine />
-      </View>
-
-      {/* Radio */}
-      <RadioButton
-        options={selectTime}
-        selectedId={menuid}
-        onChange={(id) => setmenuid(id)}
-      />
-
-      {/* time picker */}
-      {menuid === 1 && (
-        <View
-          style={{
-            flexDirection: "row",
-            width: "90%",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            marginTop: RFPercentage(1),
-          }}
-        >
-          <DatePicker
-            width={"48%"}
-            titleSize={RFPercentage(1.6)}
-            borderColor={Colors.stroke}
-            isTimePicker={true}
-            label="Starting Time"
-            placeholder={startingTime}
-            onTimeChange={(value) => handleTimeChange(value, "startTime")}
-            error={error}
-            setError={setError}
-            icon={"clock-time-four-outline"}
-          />
-          <DatePicker
-            width={"48%"}
-            titleSize={RFPercentage(1.6)}
-            isTimePicker={true}
-            borderColor={Colors.stroke}
-            label="Ending Time"
-            placeholder={endingTime}
-            onTimeChange={(value) => handleTimeChange(value, "endTime")}
-            error={error}
-            setError={setError}
-            icon={"clock-time-four-outline"}
-          />
-        </View>
-      )}
-      <View style={{ marginVertical: RFPercentage(4), width: "70%" }}>
-        <AppLine />
-      </View>
-
-      <View style={styles.container}>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            width: "100%",
-            justifyContent: "space-between",
-          }}
-        >
-          <Text style={styles.label}>Contacts</Text>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() =>
-              navigation.navigate("ExistingContactsScreen", {
-                preSelectedContacts: selectedContacts,
-                ...(eventId && { eventId }),
-              })
-            }
-          >
-            <Text style={[styles.label, { fontFamily: FontFamily.medium }]}>
-              Add Existing
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.inputContainer}>
-          <ScrollView
-            horizontal
-            contentContainerStyle={styles.emailList}
-            showsHorizontalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {emails.map((email, index) => (
-              <View key={index} style={styles.emailTag}>
-                <Text style={styles.emailText}>{email}</Text>
-                <TouchableOpacity onPress={() => handleRemoveEmail(index)}>
-                  <Text style={styles.removeIcon}>×</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-            <TextInput
-              value={emailInput}
-              onChangeText={handleInputChange}
-              placeholder="Type & Select multiple contacts"
-              placeholderTextColor={Colors.stroke}
-              style={styles.textInput}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-          </ScrollView>
-        </View>
-      </View>
-
-      {/* notification */}
-      <View
-        style={{
-          width: "90%",
-          flexDirection: "row",
+    // <Screen style={styles.screen}>
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 2 : 0}
+    >
+      <ScrollView
+        ref={scrollRef}
+        style={{ width: "100%" }}
+        contentContainerStyle={{
           alignItems: "center",
-          justifyContent: "space-between",
-          marginTop: RFPercentage(3),
+          paddingBottom: 80,
+          marginTop: Platform.OS === "ios" ? RFPercentage(5) : 0,
         }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Fontisto
-            color={Colors.blacksuit}
-            style={{ marginRight: RFPercentage(1) }}
-            size={20}
-            name={"bell"}
-          />
-          <Text
+        <CommonHeader
+          title={eventId ? "Manage Event" : "Create Event"}
+          onBackPress={() => navigation.goBack()}
+        />
+        <View style={{ marginTop: RFPercentage(2) }} />
+        <InputField
+          title={"Title"}
+          placeTitle={"Enter Title"}
+          value={title}
+          onChange={setTitle}
+        />
+
+        <DatePicker
+          titleSize={RFPercentage(1.6)}
+          width={"90%"}
+          borderColor={Colors.stroke}
+          isTimePicker={false}
+          label="Starting Date"
+          placeholder={date}
+          onDateChange={handleDateChange}
+          error={error}
+          setError={setError}
+          icon={"calendar-month-outline"}
+        />
+
+        <View style={{ marginVertical: RFPercentage(4), width: "70%" }}>
+          <AppLine />
+        </View>
+
+        {/* Radio */}
+        <RadioButton
+          options={selectTime}
+          selectedId={menuid}
+          onChange={(id) => setmenuid(id)}
+        />
+
+        {/* time picker */}
+        {menuid === 1 && (
+          <View
             style={{
-              color: Colors.blacksuit,
-              fontFamily: FontFamily.regular,
-              fontSize: RFPercentage(1.6),
+              flexDirection: "row",
+              width: "90%",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              marginTop: RFPercentage(1),
             }}
           >
-            Send Notification to participants
-          </Text>
+            <DatePicker
+              width={"48%"}
+              titleSize={RFPercentage(1.6)}
+              borderColor={Colors.stroke}
+              isTimePicker={true}
+              label="Starting Time"
+              placeholder={startingTime}
+              onTimeChange={(value) => handleTimeChange(value, "startTime")}
+              error={error}
+              setError={setError}
+              icon={"clock-time-four-outline"}
+            />
+            <DatePicker
+              width={"48%"}
+              titleSize={RFPercentage(1.6)}
+              isTimePicker={true}
+              borderColor={Colors.stroke}
+              label="Ending Time"
+              placeholder={endingTime}
+              onTimeChange={(value) => handleTimeChange(value, "endTime")}
+              error={error}
+              setError={setError}
+              icon={"clock-time-four-outline"}
+            />
+          </View>
+        )}
+        <View style={{ marginVertical: RFPercentage(4), width: "70%" }}>
+          <AppLine />
         </View>
 
-        <Switch
-          value={isSwitchOn}
-          onValueChange={toggleSwitch}
-          thumbColor={"#fff"}
-          trackColor={{
-            false: Colors.grey, // when off
-            true: Colors.primary, // when on
-          }}
-        />
-      </View>
-      {eventId ? (
+        <View style={styles.container}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              width: "100%",
+              justifyContent: "space-between",
+            }}
+          >
+            <Text style={styles.label}>Contacts</Text>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() =>
+                navigation.navigate("ExistingContactsScreen", {
+                  preSelectedContacts: selectedContacts,
+                  ...(eventId && { eventId }),
+                })
+              }
+            >
+              <Text style={[styles.label, { fontFamily: FontFamily.medium }]}>
+                Add Existing
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.inputContainer}>
+            <ScrollView
+              horizontal
+              contentContainerStyle={styles.emailList}
+              showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {emails.map((email, index) => (
+                <View key={index} style={styles.emailTag}>
+                  <Text style={styles.emailText}>{email}</Text>
+                  <TouchableOpacity onPress={() => handleRemoveEmail(index)}>
+                    <Text style={styles.removeIcon}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+              <TextInput
+                onFocus={() => {
+                  scrollRef.current?.scrollToEnd({ animated: true }); // ✅ Auto scroll input into view
+                }}
+                value={emailInput}
+                onChangeText={handleInputChange}
+                placeholder="Type & Select multiple contacts"
+                placeholderTextColor={Colors.stroke}
+                style={styles.textInput}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+            </ScrollView>
+          </View>
+        </View>
+
+        {/* notification */}
         <View
           style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
             width: "90%",
-            // marginTop: RFPercentage(10),
-            position: "absolute",
-            bottom: RFPercentage(6),
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginTop: RFPercentage(3),
           }}
         >
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={handleSubmit}
-            style={[
-              {
-                backgroundColor: Colors.primary,
-              },
-              styles.buttonContainer,
-            ]}
-          >
-            <Text style={styles.buttonText}>Save</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Fontisto
+              color={Colors.blacksuit}
+              style={{ marginRight: RFPercentage(1) }}
+              size={20}
+              name={"bell"}
+            />
+            <Text
+              style={{
+                color: Colors.blacksuit,
+                fontFamily: FontFamily.regular,
+                fontSize: RFPercentage(1.6),
+              }}
+            >
+              Send Notification to participants
+            </Text>
+          </View>
 
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={handleDelete}
-            style={[
-              {
-                backgroundColor: Colors.red,
-              },
-              styles.buttonContainer,
-            ]}
-          >
-            <Text style={styles.buttonText}>Delete</Text>
-          </TouchableOpacity>
+          <Switch
+            value={isSwitchOn}
+            onValueChange={toggleSwitch}
+            thumbColor={"#fff"}
+            trackColor={{
+              false: Colors.grey, // when off
+              true: Colors.primary, // when on
+            }}
+          />
         </View>
-      ) : (
-        <TouchableOpacity
-          onPress={handleSubmit}
-          style={[
-            styles.loginbutton,
-            { position: "absolute", bottom: RFPercentage(6) },
-          ]}
-          activeOpacity={0.7}
-        >
-          <AppButton title={"Save"} buttonColor={Colors.primary} />
-        </TouchableOpacity>
-      )}
-      {/* modal */}
-      <CommonModal
-        isModalVisible={isModalVisible}
-        setIsModalVisible={setIsModalVisible}
-        image={icons.qstn}
-        title={"Would you like to send notification to the client/s ?"}
-        buttonpri={"Send"}
-        buttonsec={"Cancel"}
-        onpressPri={() => {
-          // Keep switch ON, just close modal
-          setIsModalVisible(false);
-          // ✅ Add your send logic here
-        }}
-        onpressSec={() => {
-          // Cancel: turn switch OFF + close modal
-          setIsModalVisible(false);
-          setIsSwitchOn(false);
-        }}
-      />
 
-      {/* modal */}
-      {/* <CommonModal
-        isModalVisible={isDelModalVisible}
-        setIsModalVisible={setIsDelModalVisible}
-        image={icons.redqstn}
-        title={"Are you sure you want to Delete the Event ?"}
-        buttonpri={"Yes"}
-        buttonsec={"Cancel"}
-        onpressPri={handleDelete}
-        onpressSec={() => {
-          // Cancel: turn switch OFF + close modal
-          setIsDelModalVisible(false);
-        }}
-      /> */}
+        {eventId ? (
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              width: "90%",
+              marginTop: RFPercentage(13),
+            }}
+          >
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setIsDelModalVisible(true)}
+              style={[
+                {
+                  backgroundColor: Colors.red,
+                  marginRight: 13,
+                },
+                styles.buttonContainer,
+              ]}
+            >
+              <Text style={styles.buttonText}>Delete</Text>
+            </TouchableOpacity>
 
-      {/* Alert */}
-      <CustomAlert
-        message={alertMessage}
-        visible={alertVisible}
-        type={alertType} // "success" or "error"
-        onClose={() => setAlertVisible(false)}
-      />
-    </Screen>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleSubmit}
+              style={[
+                {
+                  backgroundColor: Colors.primary,
+                },
+                styles.buttonContainer,
+              ]}
+            >
+              <Text style={styles.buttonText}>Save</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            onPress={handleSubmit}
+            style={styles.loginbutton}
+            activeOpacity={0.7}
+          >
+            <AppButton title={"Save"} buttonColor={Colors.primary} />
+          </TouchableOpacity>
+        )}
+
+        {/* modal */}
+        <CommonModal
+          isModalVisible={isModalVisible}
+          setIsModalVisible={setIsModalVisible}
+          image={icons.qstn}
+          title={"Would you like to send notification to the client/s ?"}
+          buttonpri={"Send"}
+          buttonsec={"Cancel"}
+          onpressPri={() => {
+            // Keep switch ON, just close modal
+            setIsModalVisible(false);
+            // ✅ Add your send logic here
+          }}
+          onpressSec={() => {
+            // Cancel: turn switch OFF + close modal
+            setIsModalVisible(false);
+            setIsSwitchOn(false);
+          }}
+        />
+
+        {/* modal */}
+        <CommonModal
+          isModalVisible={isDelModalVisible}
+          setIsModalVisible={setIsDelModalVisible}
+          image={icons.redqstn}
+          title={"Are you sure you want to Delete the Event ?"}
+          buttonpri={"Yes"}
+          buttonsec={"Cancel"}
+          onpressPri={handleDelete}
+          onpressSec={() => {
+            setIsDelModalVisible(false);
+          }}
+        />
+
+        {/* Alert */}
+        <CustomAlert
+          message={alertMessage}
+          visible={alertVisible}
+          type={alertType} // "success" or "error"
+          onClose={() => setAlertVisible(false)}
+        />
+      </ScrollView>
+    </KeyboardAvoidingView>
+    // </Screen>
   );
 };
 
@@ -540,10 +570,10 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: RFPercentage(1.5),
+    marginTop: RFPercentage(13),
   },
   textInput: {
-    // flex: 1,
+    minWidth: RFPercentage(34),
     color: Colors.blacksuit,
     fontSize: RFPercentage(1.4),
     fontFamily: FontFamily.regular,
@@ -593,17 +623,11 @@ const styles = StyleSheet.create({
     fontSize: RFPercentage(1.5),
     fontWeight: "bold",
   },
-  textInput: {
-    minWidth: 120,
-    fontSize: RFPercentage(1.4),
-    fontFamily: FontFamily.regular,
-    color: Colors.blacktext,
-  },
+
   buttonContainer: {
     paddingVertical: 13,
     paddingHorizontal: 20,
     borderRadius: 10,
-    marginRight: 10,
     flex: 1,
     alignItems: "center",
   },

@@ -306,10 +306,21 @@ const ExistingContactsScreen = ({ navigation }) => {
       <AppModal
         modalVisible={isModalVisible}
         setModalVisible={setIsModalVisible}
-        style={{ alignItems: "center", justifyContent: "center" }}
-        RecStyle={{ width: "60%" }}
+        style={{
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: null,
+        }}
+        RecStyle={{
+          width: "40%",
+          padding: RFPercentage(1),
+          borderRadius: RFPercentage(0.5),
+          position: "absolute",
+          top: "25%",
+          right: RFPercentage(2),
+        }}
       >
-        <TouchableOpacity
+        {/* <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => {
             setIsModalVisible(false);
@@ -321,8 +332,8 @@ const ExistingContactsScreen = ({ navigation }) => {
           }}
         >
           <Feather name={"x"} size={22} color={Colors.blacksuit} />
-        </TouchableOpacity>
-        <Text
+        </TouchableOpacity> */}
+        {/* <Text
           style={{
             marginBottom: RFPercentage(1),
             color: Colors.primary,
@@ -331,7 +342,7 @@ const ExistingContactsScreen = ({ navigation }) => {
           }}
         >
           Filters
-        </Text>
+        </Text> */}
         {filters
           .filter((f) => f.type === "sort")
           .map((filter) => (

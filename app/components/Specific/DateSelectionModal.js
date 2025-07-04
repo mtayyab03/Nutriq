@@ -27,6 +27,10 @@ const DateSelectionModal = ({
       modalVisible={visible}
       setModalVisible={setVisible}
       style={{ alignItems: "center", justifyContent: "center" }}
+      RecStyle={{
+        width: "60%",
+        padding: RFPercentage(2),
+      }}
     >
       <TouchableOpacity
         activeOpacity={0.7}

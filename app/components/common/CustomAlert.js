@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Animated, StyleSheet } from "react-native";
+import { View, Text, Animated, StyleSheet, Platform } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 
 // Config
@@ -51,7 +51,10 @@ const getStyles = (type) => {
     container: {
       width: "90%",
       position: "absolute",
-      top: RFPercentage(6),
+      top: Platform.select({
+        ios: RFPercentage(3),
+        android: RFPercentage(2),
+      }),
       left: 0,
       right: 0,
       backgroundColor,

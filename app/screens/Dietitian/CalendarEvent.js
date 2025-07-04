@@ -6,6 +6,8 @@ import {
   View,
   Text,
   ScrollView,
+  Alert,
+  TextInput,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { LinearGradient } from "expo-linear-gradient";
@@ -16,6 +18,9 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import moment from "moment";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
+
 //Components
 import Screen from "../../components/Screen";
 import AppButton from "../../components/AppButton";
@@ -30,11 +35,14 @@ import icons from "../../config/icons";
 import Colors from "../../config/Colors";
 import { FontFamily } from "../../config/font";
 
-const CalendarEvent = ({ navigation, route }) => {
+const CalendarEvent = ({ route }) => {
+  const navigation = useNavigation();
   const selectedDate = route.params?.selectedDate;
   const [selectedDayIndex, setSelectedDayIndex] = useState(null);
   const [selectedDayDate, setSelectedDayDate] = useState(null);
   const [eventsForSelectedDay, setEventsForSelectedDay] = useState([]);
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [allEventsByDate, setAllEventsByDate] = useState([]); // [{ date: "YYYY-MM-DD", events: [...] }]
   const [loadedDays, setLoadedDays] = useState(0); // how many 5-day chunks we've loaded
   const [isLoading, setIsLoading] = useState(false); // For UI display
@@ -160,6 +168,32 @@ const CalendarEvent = ({ navigation, route }) => {
     }
   }, [route.params?.refresh]);
 
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem("authToken"); // ✅ Clear token
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "LoginScreen" }], // 👈 Update to your login screen name
+      });
+    } catch (error) {
+      Alert.alert(
+        "Logout Failed",
+        "Something went wrong while logging out. Please try again."
+      );
+    }
+  };
+
+  const filteredEventsByDate = searchQuery
+    ? allEventsByDate
+        .map(({ date, events }) => {
+          const filteredEvents = events.filter((event) =>
+            event.title.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+          return { date, events: filteredEvents };
+        })
+        .filter(({ events }) => events.length > 0) // remove empty sections
+    : allEventsByDate;
+
   return (
     <Screen style={styles.screen}>
       <View
@@ -171,37 +205,82 @@ const CalendarEvent = ({ navigation, route }) => {
           marginTop: RFPercentage(1.5),
         }}
       >
-        <TouchableOpacity
-          style={styles.leftIcon}
-          activeOpacity={0.7}
-          // onPress={() => navigation.goBack()}
-        >
-          <AntDesign color={Colors.white} size={24} name={"arrowleft"} />
-        </TouchableOpacity>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Text
+        {isSearchVisible ? (
+          // 🔍 Search Field
+          <View
             style={{
-              color: Colors.blacky,
-              fontFamily: FontFamily.medium,
-              fontSize: RFPercentage(2.3),
+              flexDirection: "row",
+              alignItems: "center",
+              borderWidth: RFPercentage(0.1),
+              borderColor: Colors.lightWhite,
+              borderRadius: RFPercentage(3),
+              paddingHorizontal: RFPercentage(1),
+              flex: 1,
+              padding: RFPercentage(1),
+              paddingHorizontal: RFPercentage(2),
             }}
           >
-            Calendar
-          </Text>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate("CalendarScreen")}
-          >
-            <MaterialCommunityIcons
-              color={Colors.blacksuit}
-              style={{ marginLeft: RFPercentage(0.5) }}
-              size={24}
-              name={"calendar-month"}
+            <TextInput
+              placeholder="Search..."
+              placeholderTextColor={Colors.grey}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={{
+                flex: 1,
+                color: Colors.blacky,
+                fontFamily: FontFamily.regular,
+                fontSize: RFPercentage(1.6),
+              }}
             />
-          </TouchableOpacity>
-        </View>
-
-        <Feather color={Colors.blacky} size={24} name={"search"} />
+            <TouchableOpacity
+              onPress={() => {
+                setIsSearchVisible(false);
+                setSearchQuery(""); // optional: reset search
+              }}
+            >
+              <Text
+                style={{ fontSize: RFPercentage(2.5), color: Colors.blacky }}
+              >
+                ×
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          // 📆 Calendar & Icons Section
+          <>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setIsSearchVisible(true)}
+            >
+              <Feather color={Colors.blacky} size={24} name={"search"} />
+            </TouchableOpacity>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text
+                style={{
+                  color: Colors.blacky,
+                  fontFamily: FontFamily.medium,
+                  fontSize: RFPercentage(2.3),
+                }}
+              >
+                Calendar
+              </Text>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate("CalendarScreen")}
+              >
+                <MaterialCommunityIcons
+                  color={Colors.blacksuit}
+                  style={{ marginLeft: RFPercentage(0.5) }}
+                  size={24}
+                  name={"calendar-month"}
+                />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity activeOpacity={0.7} onPress={handleLogout}>
+              <MaterialIcons color={Colors.red} size={24} name={"logout"} />
+            </TouchableOpacity>
+          </>
+        )}
       </View>
 
       {/* scroll date */}
@@ -209,9 +288,10 @@ const CalendarEvent = ({ navigation, route }) => {
       <View
         style={{
           width: "90%",
-          marginTop: RFPercentage(3),
+          marginTop: isSearchVisible ? RFPercentage(1.1) : RFPercentage(3),
           flexDirection: "row",
           alignItems: "center",
+          justifyContent: "space-between",
           // backgroundColor: Colors.brown,
         }}
       >
@@ -221,12 +301,12 @@ const CalendarEvent = ({ navigation, route }) => {
           const content = (
             <View
               style={{
-                width: RFPercentage(5),
-                paddingHorizontal: RFPercentage(0.5),
+                paddingHorizontal: RFPercentage(0.8),
                 paddingVertical: RFPercentage(1),
-                borderRadius: RFPercentage(1.5),
+                borderRadius: RFPercentage(1.8),
                 alignItems: "center",
                 justifyContent: "center",
+                minWidth: RFPercentage(5),
               }}
             >
               <Text
@@ -329,48 +409,60 @@ const CalendarEvent = ({ navigation, route }) => {
           }}
           scrollEventThrottle={400}
         >
-          {allEventsByDate.map(({ date, events }) => (
-            <View
-              key={date}
-              ref={(ref) => {
-                if (ref) {
-                  sectionRefs.current[date] = ref;
-                }
+          {filteredEventsByDate.length > 0 ? (
+            filteredEventsByDate.map(({ date, events }) => (
+              <View
+                key={date}
+                ref={(ref) => {
+                  if (ref) {
+                    sectionRefs.current[date] = ref;
+                  }
+                }}
+              >
+                <View style={styles.dotContainer}>
+                  <View style={styles.dot} />
+                  <Text style={styles.scheduleText}>
+                    {moment(date).isSame(moment(), "day")
+                      ? `Today Schedule (${events.length})`
+                      : `${moment(date).format("dddd")} Schedule (${
+                          events.length
+                        })`}
+                  </Text>
+                </View>
+
+                {events.map((event) => (
+                  <DietitianEvent
+                    key={event.id}
+                    day={moment(event.startDate).format("YYYY-MM-DD")} // Pass full date string
+                    eventTitle={event.title}
+                    time={
+                      event.startTime && event.endTime
+                        ? `${event.startTime} - ${event.endTime}`
+                        : "All Day"
+                    }
+                    onPress={() =>
+                      navigation.navigate("CreateEventScreen", {
+                        eventId: event.id,
+                      })
+                    }
+                  />
+                ))}
+              </View>
+            ))
+          ) : (
+            <Text
+              style={{
+                marginTop: RFPercentage(5),
+                fontSize: RFPercentage(2),
+                color: Colors.red,
+                fontFamily: FontFamily.medium,
               }}
             >
-              <View style={styles.dotContainer}>
-                <View style={styles.dot} />
-                <Text style={styles.scheduleText}>
-                  {moment(date).isSame(moment(), "day")
-                    ? `Today Schedule (${events.length})`
-                    : `${moment(date).format("dddd")} Schedule (${
-                        events.length
-                      })`}
-                </Text>
-              </View>
-
-              {events.map((event) => (
-                <DietitianEvent
-                  key={event.id}
-                  day={moment(event.startDate).format("YYYY-MM-DD")} // Pass full date string
-                  eventTitle={event.title}
-                  time={
-                    event.startTime && event.endTime
-                      ? `${event.startTime} - ${event.endTime}`
-                      : "All Day"
-                  }
-                  onPress={() =>
-                    navigation.navigate("CreateEventScreen", {
-                      eventId: event.id,
-                    })
-                  }
-                />
-              ))}
-            </View>
-          ))}
+              No events found for "{searchQuery}"
+            </Text>
+          )}
         </ScrollView>
       )}
-      {/* tommorow Event */}
 
       <TouchableOpacity
         onPress={() => navigation.navigate("CreateEventScreen")}

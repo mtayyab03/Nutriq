@@ -17,15 +17,11 @@ import {
 import HomeScreen from "../screens/HomeScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import DiscoverScreen from "../screens/Patient/DiscoverScreen";
-
+import ProgressScreen from "../screens/Patient/ProgressScreen";
 //config
 import Colors from "../config/Colors";
 
 const Tab = createBottomTabNavigator();
-
-const NewPostScreen = () => {
-  return null; // Return null for an empty screen
-};
 
 export default function BottomTab() {
   return (
@@ -72,8 +68,8 @@ export default function BottomTab() {
       />
 
       <Tab.Screen
-        name="NewPostScreen"
-        component={NewPostScreen}
+        name="ProgressScreen"
+        component={ProgressScreen}
         options={{
           tabBarLabel: "Progress",
           tabBarIcon: ({ color, size }) => (

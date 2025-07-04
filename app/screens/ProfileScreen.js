@@ -17,6 +17,7 @@ import {
 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 //config
 import Colors from "../config/Colors";
@@ -77,6 +78,21 @@ const Profilescreen = ({ navigation }) => {
 
     if (!result.cancelled) {
       setSelectedImage(result.assets[0].uri); // Set the selected image
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem("authToken"); // ✅ Clear token
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "LoginScreen" }], // 👈 Update to your login screen name
+      });
+    } catch (error) {
+      Alert.alert(
+        "Logout Failed",
+        "Something went wrong while logging out. Please try again."
+      );
     }
   };
   return (
@@ -277,9 +293,7 @@ const Profilescreen = ({ navigation }) => {
         >
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => {
-              navigation.navigate("LoginScreen");
-            }}
+            onPress={handleLogout}
             style={{
               flexDirection: "row",
               alignItems: "center",

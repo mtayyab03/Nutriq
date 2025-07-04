@@ -16,6 +16,7 @@ import DatePicker from "../components/DatePicker";
 import BarText from "../components/BarText";
 import MealDef from "../components/Specific/MealDef";
 import DateSelectionModal from "../components/Specific/DateSelectionModal";
+import AppLoading from "../components/AppLoading";
 
 // apis
 import apiClient from "../apis/apiClient";
@@ -48,6 +49,7 @@ const HomeScreen = () => {
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [allMealPlans, setAllMealPlans] = useState([]);
   const [firstPlanId, setFirstPlanId] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   const handlePreviousDay = () => {
     setCurrentDayIndex((prevIndex) =>
@@ -79,6 +81,7 @@ const HomeScreen = () => {
 
   useEffect(() => {
     const fetchMealData = async () => {
+      setLoading(true); // 👈 Start loading here
       try {
         const companyResponse = await apiClient.get("/client/companies");
 
@@ -131,7 +134,7 @@ const HomeScreen = () => {
       } catch (error) {
         console.error("Error fetching meal data:", error);
       } finally {
-        setLoading(false);
+        setLoading(false); // 👈 Stop loading
       }
     };
 
@@ -263,31 +266,8 @@ const HomeScreen = () => {
           onPress={() => setIsModalVisible(true)}
           style={{ width: "48%", marginTop: RFPercentage(1) }}
         >
-          <Text
-            style={{
-              marginTop: RFPercentage(0.7),
-              color: Colors.blacky,
-              fontFamily: FontFamily.regular,
-              fontSize: RFPercentage(1.2),
-            }}
-          >
-            Starting Date
-          </Text>
-          <View
-            style={{
-              flexDirection: "row",
-              width: "100%",
-              backgroundColor: Colors.white,
-              borderWidth: RFPercentage(0.1),
-              borderColor: Colors.primary,
-              color: Colors.blacktext,
-              padding: RFPercentage(1.5),
-              alignItems: "center",
-              borderRadius: RFPercentage(1),
-              justifyContent: "space-between",
-              marginTop: RFPercentage(1),
-            }}
-          >
+          <Text style={styles.dateText}>Starting Date</Text>
+          <View style={styles.dateContainers}>
             <Text
               style={{
                 color: Colors.blacksuit,
@@ -306,53 +286,33 @@ const HomeScreen = () => {
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          style={{ width: "48%", marginTop: RFPercentage(1) }}
-        >
-          <Text
-            style={{
-              marginTop: RFPercentage(0.7),
-              color: Colors.blacky,
-              fontFamily: FontFamily.regular,
-              fontSize: RFPercentage(1.2),
-            }}
+
+        {endingDate ? (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={{ width: "48%", marginTop: RFPercentage(1) }}
           >
-            Ending Date
-          </Text>
-          <View
-            style={{
-              flexDirection: "row",
-              width: "100%",
-              backgroundColor: Colors.white,
-              borderWidth: RFPercentage(0.1),
-              borderColor: Colors.primary,
-              color: Colors.blacktext,
-              padding: RFPercentage(1.5),
-              alignItems: "center",
-              borderRadius: RFPercentage(1),
-              justifyContent: "space-between",
-              marginTop: RFPercentage(1),
-            }}
-          >
-            <Text
-              style={{
-                color: Colors.blacksuit,
-                fontFamily: FontFamily.medium,
-                fontSize: RFPercentage(1.4),
-              }}
-            >
-              {endingDate}
-            </Text>
-            <TouchableOpacity activeOpacity={0.7} style={styles.calendarIcon}>
-              <MaterialIcons
-                name={"keyboard-arrow-down"}
-                size={22}
-                color={Colors.gray}
-              />
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
+            <Text style={styles.dateText}>Ending Date</Text>
+            <View style={styles.dateContainers}>
+              <Text
+                style={{
+                  color: Colors.blacksuit,
+                  fontFamily: FontFamily.medium,
+                  fontSize: RFPercentage(1.4),
+                }}
+              >
+                {endingDate}
+              </Text>
+              <TouchableOpacity activeOpacity={0.7} style={styles.calendarIcon}>
+                <MaterialIcons
+                  name={"keyboard-arrow-down"}
+                  size={22}
+                  color={Colors.gray}
+                />
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       <MealDef />
@@ -417,86 +377,89 @@ const HomeScreen = () => {
       </View>
 
       {/* Meal details  */}
+      {loading ? (
+        <AppLoading />
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            alignItems: "center",
+            paddingBottom: RFPercentage(4),
+          }}
+        >
+          {filteredMeals.length > 0 ? (
+            filteredMeals.map((meal, index) => {
+              const foodNames =
+                meal.foods && meal.foods.length > 0
+                  ? meal.foods.map((f) => f.food.name).join(", ")
+                  : null;
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          alignItems: "center",
-          paddingBottom: RFPercentage(4),
-        }}
-      >
-        {filteredMeals.length > 0 ? (
-          filteredMeals.map((meal, index) => {
-            const foodNames =
-              meal.foods && meal.foods.length > 0
-                ? meal.foods.map((f) => f.food.name).join(", ")
-                : null;
+              const recipeNames =
+                meal.recipes && meal.recipes.length > 0
+                  ? meal.recipes.map((r) => r.recipe.name).join(", ")
+                  : null;
 
-            const recipeNames =
-              meal.recipes && meal.recipes.length > 0
-                ? meal.recipes.map((r) => r.recipe.name).join(", ")
-                : null;
+              const hasData =
+                foodNames || recipeNames || meal.note || meal.energyKcal;
 
-            const hasData =
-              foodNames || recipeNames || meal.note || meal.energyKcal;
-
-            if (!hasData) return null; // Skip rendering if there's no data
-            return (
-              <View
-                key={index}
-                style={{
-                  width: "90%",
-                  marginTop: RFPercentage(2),
-                  flexDirection: "row",
-                }}
-              >
-                <View style={styles.rotContainer}>
-                  <View style={styles.rotationCon}>
-                    <Text style={styles.rotText}>
-                      {meal.mealTime.replace(/_/g, " ")}
-                    </Text>
-                  </View>
-                </View>
-                <View style={{ width: "100%", justifyContent: "center" }}>
-                  {foodNames && (
-                    <BarText barColor={Colors.primary} title={foodNames} />
-                  )}
-
-                  {recipeNames && (
-                    <BarText barColor={Colors.brown} title={recipeNames} />
-                  )}
-                  {meal.note ? (
-                    <BarText barColor={Colors.purple} title={meal.note} />
-                  ) : null}
-
-                  {meal.energyKcal ? (
-                    <View style={styles.CalContainer}>
-                      <MaterialIcons
-                        color={Colors.white}
-                        size={18}
-                        name={"electric-bolt"}
-                      />
-                      <Text style={styles.CalText}>
-                        {meal.energyKcal.toFixed(1)}
+              if (!hasData) return null; // Skip rendering if there's no data
+              return (
+                <View
+                  key={index}
+                  style={{
+                    width: "90%",
+                    marginTop: RFPercentage(2),
+                    flexDirection: "row",
+                  }}
+                >
+                  <View style={styles.rotContainer}>
+                    <View style={styles.rotationCon}>
+                      <Text style={styles.rotText}>
+                        {meal.mealTime.replace(/_/g, " ")}
                       </Text>
                     </View>
-                  ) : null}
+                  </View>
+                  <View style={{ width: "100%", justifyContent: "center" }}>
+                    {foodNames && (
+                      <BarText barColor={Colors.primary} title={foodNames} />
+                    )}
+
+                    {recipeNames && (
+                      <BarText barColor={Colors.brown} title={recipeNames} />
+                    )}
+                    {meal.note ? (
+                      <BarText barColor={Colors.purple} title={meal.note} />
+                    ) : null}
+
+                    {meal.energyKcal ? (
+                      <View style={styles.CalContainer}>
+                        <MaterialIcons
+                          color={Colors.white}
+                          size={18}
+                          name={"electric-bolt"}
+                        />
+                        <Text style={styles.CalText}>
+                          {meal.energyKcal.toFixed(1)}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
-              </View>
-            );
-          })
-        ) : (
-          <Text
-            style={{
-              color: Colors.red,
-              fontSize: 16,
-              marginTop: RFPercentage(10),
-            }}
-          >
-            No meals available for {currentDay}
-          </Text>
-        )}
-      </ScrollView>
+              );
+            })
+          ) : (
+            <Text
+              style={{
+                color: Colors.red,
+                fontSize: 16,
+                marginTop: RFPercentage(10),
+              }}
+            >
+              No meals available for {currentDay}
+            </Text>
+          )}
+        </ScrollView>
+      )}
       {/* meal detaile end */}
 
       <DateSelectionModal
@@ -592,5 +555,24 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     width: "90%",
     marginTop: RFPercentage(3),
+  },
+  dateContainers: {
+    flexDirection: "row",
+    width: "100%",
+    backgroundColor: Colors.white,
+    borderWidth: RFPercentage(0.1),
+    borderColor: Colors.primary,
+    color: Colors.blacktext,
+    padding: RFPercentage(1.5),
+    alignItems: "center",
+    borderRadius: RFPercentage(1),
+    justifyContent: "space-between",
+    marginTop: RFPercentage(1),
+  },
+  dateText: {
+    marginTop: RFPercentage(0.7),
+    color: Colors.blacky,
+    fontFamily: FontFamily.regular,
+    fontSize: RFPercentage(1.2),
   },
 });

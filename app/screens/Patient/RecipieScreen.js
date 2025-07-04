@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 //Components
 import Screen from "../../components/Screen";
 import CommonHeader from "../../components/common/CommonHeader";
+import AppLoading from "../../components/AppLoading";
 
 // apis
 import apiClient from "../../apis/apiClient";
@@ -16,8 +17,9 @@ import Colors from "../../config/Colors";
 import { FontFamily } from "../../config/font";
 
 const RecipieScreen = ({ navigation, route }) => {
-  const { recipeId, companyId } = route.params;
+  const { recipeId, companyId, imageRecipe } = route.params;
   const [recipe, setRecipe] = useState(null);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     const fetchRecipe = async () => {
       try {
@@ -29,13 +31,36 @@ const RecipieScreen = ({ navigation, route }) => {
         }
       } catch (error) {
         console.error("Error fetching recipe:", error);
+      } finally {
+        setLoading(false); // ✅ Stop loading
       }
     };
 
     fetchRecipe();
   }, [companyId, recipeId]);
 
-  if (!recipe) return null; // Or show loading indicator
+  if (loading) {
+    return <AppLoading />;
+  }
+
+  if (!recipe) {
+    return (
+      <Screen style={styles.screen}>
+        <CommonHeader title="Recipie" onBackPress={() => navigation.goBack()} />
+        <Text
+          style={{
+            textAlign: "center",
+            marginTop: RFPercentage(5),
+            fontFamily: FontFamily.medium,
+            fontSize: RFPercentage(2),
+            color: Colors.red,
+          }}
+        >
+          Failed to load recipe.
+        </Text>
+      </Screen>
+    );
+  }
 
   return (
     <Screen style={styles.screen}>
@@ -47,17 +72,21 @@ const RecipieScreen = ({ navigation, route }) => {
         }}
         showsVerticalScrollIndicator={false}
         style={{ width: "100%" }}
+        bounces={false} // iOS only: disables bounce
+        overScrollMode="never" // Android only: disables overscroll glow
       >
-        <Image
-          style={{
-            width: "90%",
-            height: RFPercentage(30),
-            borderRadius: RFPercentage(2),
-            marginTop: RFPercentage(2),
-          }}
-          source={icons.saladimg}
-          resizeMode="cover"
-        />
+        {imageRecipe && (
+          <Image
+            style={{
+              width: "90%",
+              height: RFPercentage(30),
+              borderRadius: RFPercentage(2),
+              marginTop: RFPercentage(2),
+            }}
+            source={imageRecipe}
+            resizeMode="cover"
+          />
+        )}
         <View style={styles.mainContainer}>
           <View style={{ width: "50%" }}>
             <Text

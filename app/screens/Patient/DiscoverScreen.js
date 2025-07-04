@@ -169,6 +169,7 @@ const DiscoverScreen = ({ navigation }) => {
                   navigation.navigate("RecipieScreen", {
                     recipeId: item.id,
                     companyId: companyId, // make sure this is available in your component state
+                    imageRecipe: item.image,
                   })
                 }
                 style={{

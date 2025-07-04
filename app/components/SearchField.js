@@ -50,6 +50,7 @@ const styles = StyleSheet.create({
   },
 
   inputtext: {
+    width: "85%",
     fontSize: RFPercentage(1.6),
     color: Colors.blacky,
     fontFamily: FontFamily.regular,

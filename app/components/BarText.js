@@ -19,6 +19,7 @@ const BarText = ({ barColor, title }) => {
         flexDirection: "row",
         alignItems: "center",
         marginTop: RFPercentage(0.5),
+        overflow: "hidden",
       }}
     >
       <View
