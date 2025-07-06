@@ -290,6 +290,7 @@ const ExistingContactsScreen = ({ navigation }) => {
           const selectedMapped = selected.map((c) => ({
             id: c.id,
             email: c.mail,
+            name: c.name,
             status: c.status,
           }));
 
@@ -320,29 +321,6 @@ const ExistingContactsScreen = ({ navigation }) => {
           right: RFPercentage(2),
         }}
       >
-        {/* <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => {
-            setIsModalVisible(false);
-          }}
-          style={{
-            width: "100%",
-            justifyContent: "flex-end",
-            alignItems: "flex-end",
-          }}
-        >
-          <Feather name={"x"} size={22} color={Colors.blacksuit} />
-        </TouchableOpacity> */}
-        {/* <Text
-          style={{
-            marginBottom: RFPercentage(1),
-            color: Colors.primary,
-            fontFamily: FontFamily.regular,
-            fontSize: RFPercentage(2),
-          }}
-        >
-          Filters
-        </Text> */}
         {filters
           .filter((f) => f.type === "sort")
           .map((filter) => (

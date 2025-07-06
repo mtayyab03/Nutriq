@@ -14,6 +14,7 @@ import {
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { Fontisto } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import moment from "moment"; // If not already imported
 
 //Components
 import Screen from "../../components/Screen";
@@ -36,7 +37,8 @@ import { FontFamily } from "../../config/font";
 
 const CreateEventScreen = ({ navigation, route }) => {
   const scrollRef = useRef(null);
-  const { eventId } = route.params || {};
+  const { eventId, selectedIndex } = route.params || {};
+  console.log("selected day", selectedIndex);
   const [title, setTitle] = useState(""); // Add loading state
   const [date, setDate] = useState("DD-MM-YYYY");
   const [error, setError] = useState({ date: false });
@@ -50,6 +52,13 @@ const CreateEventScreen = ({ navigation, route }) => {
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState("");
+
+  useEffect(() => {
+    if (!eventId && selectedIndex) {
+      const formattedDate = moment(selectedIndex).format("DD-MM-YYYY");
+      setDate(formattedDate);
+    }
+  }, [eventId, selectedIndex]);
 
   const toggleSwitch = () => {
     setIsSwitchOn((prev) => !prev);
@@ -137,8 +146,19 @@ const CreateEventScreen = ({ navigation, route }) => {
       const contacts = route?.params?.selectedContacts || [];
 
       if (contacts.length > 0) {
-        setSelectedContacts(contacts); // stores id + email
-        setEmails(contacts.map((c) => c.email)); // stores only emails
+        setSelectedContacts(contacts);
+
+        // Extract names or emails from selected contacts
+        const selectedFromContacts = contacts.map((c) => c.name || c.email);
+
+        // Merge with previously entered emails (avoid duplicates)
+        setEmails((prevEmails) => {
+          const merged = [...prevEmails];
+          selectedFromContacts.forEach((email) => {
+            if (!merged.includes(email)) merged.push(email);
+          });
+          return merged;
+        });
       }
     }, [route?.params?.selectedContacts])
   );

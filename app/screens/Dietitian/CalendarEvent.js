@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   TextInput,
+  PanResponder,
 } from "react-native";
 import { RFPercentage } from "react-native-responsive-fontsize";
 import { LinearGradient } from "expo-linear-gradient";
@@ -49,6 +50,55 @@ const CalendarEvent = ({ route }) => {
   const [weekDays, setWeekDays] = useState([]);
   const scrollRef = useRef(null);
   const sectionRefs = useRef({});
+  const [currentWeekStart, setCurrentWeekStart] = useState(
+    moment().startOf("week")
+  );
+
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onPanResponderRelease: (evt, gestureState) => {
+      const dx = gestureState.dx;
+
+      if (dx < -20) {
+        // Swiped left: go to next week
+        const nextWeek = moment(currentWeekStart).add(7, "days");
+        setCurrentWeekStart(nextWeek);
+        updateWeek(nextWeek);
+      } else if (dx > 20) {
+        // Swiped right: go to previous or current week
+        const prevWeek = moment(currentWeekStart).subtract(7, "days");
+        const presentWeek = moment().startOf("week");
+
+        if (currentWeekStart.isAfter(presentWeek)) {
+          setCurrentWeekStart(presentWeek);
+          updateWeek(presentWeek);
+        } else {
+          setCurrentWeekStart(prevWeek);
+          updateWeek(prevWeek);
+        }
+      }
+    },
+  });
+
+  const updateWeek = (newStartOfWeek) => {
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const date = moment(newStartOfWeek).add(i, "days");
+      return {
+        date,
+        day: date.format("D"),
+        weekday: date.format("ddd"),
+      };
+    });
+
+    const defaultSelectedIndex = 0; // Or 3 for center
+    const selectedDate = days[defaultSelectedIndex].date.format("YYYY-MM-DD");
+
+    setCurrentWeekStart(newStartOfWeek);
+    setWeekDays(days);
+    setSelectedDayIndex(defaultSelectedIndex);
+    setSelectedDayDate(selectedDate);
+    fetchNextNDaysEvents(selectedDate, 5, selectedDate, true);
+  };
 
   // Handles initial load and when selectedDate from route.params changes
   useEffect(() => {
@@ -285,6 +335,7 @@ const CalendarEvent = ({ route }) => {
       {/* scroll date */}
 
       <View
+        {...panResponder.panHandlers}
         style={{
           width: "90%",
           marginTop: isSearchVisible ? RFPercentage(1.1) : RFPercentage(3),
@@ -464,7 +515,11 @@ const CalendarEvent = ({ route }) => {
       )}
 
       <TouchableOpacity
-        onPress={() => navigation.navigate("CreateEventScreen")}
+        onPress={() =>
+          navigation.navigate("CreateEventScreen", {
+            selectedIndex: selectedDayDate, // 👈 pass here
+          })
+        }
         style={[
           styles.loginbutton,
           { position: "absolute", bottom: RFPercentage(6) },
