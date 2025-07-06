@@ -40,7 +40,6 @@ const CalendarEvent = ({ route }) => {
   const selectedDate = route.params?.selectedDate;
   const [selectedDayIndex, setSelectedDayIndex] = useState(null);
   const [selectedDayDate, setSelectedDayDate] = useState(null);
-  const [eventsForSelectedDay, setEventsForSelectedDay] = useState([]);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [allEventsByDate, setAllEventsByDate] = useState([]); // [{ date: "YYYY-MM-DD", events: [...] }]

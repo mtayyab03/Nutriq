@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import { FontFamily } from "../config/font";
 const DatePicker = ({
   label = "Starting Date",
   placeholder,
+  value,
   onDateChange,
   onTimeChange, // ➕ New prop
   isTimePicker = false, // ➕ Prop to control time/date mode
@@ -41,6 +42,35 @@ const DatePicker = ({
   const hideDatePicker = () => {
     setDatePickerVisibility(false);
   };
+  // 👇 Sync selectedDate when value (from API) changes
+  useEffect(() => {
+    if (!value) return;
+
+    if (isTimePicker) {
+      // If time is passed as "HH:MM"
+      const [hour, minute] = value.split(":").map(Number);
+      if (!isNaN(hour) && !isNaN(minute)) {
+        const now = new Date();
+        const parsedTime = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          hour,
+          minute
+        );
+        setSelectedDate(parsedTime); // ⏱ default selected time
+        setDate(value); // ⏱ visible in TextInput
+      }
+    } else {
+      // If date is passed as "DD-MM-YYYY"
+      const [day, month, year] = value.split("-").map(Number);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        const parsedDate = new Date(year, month - 1, day);
+        setSelectedDate(parsedDate); // 📅 default selected date
+        setDate(value); // 📅 visible in TextInput
+      }
+    }
+  }, [value, isTimePicker]);
 
   const handleConfirm = (selected) => {
     hideDatePicker();

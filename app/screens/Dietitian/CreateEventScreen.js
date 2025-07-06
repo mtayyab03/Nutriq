@@ -313,6 +313,7 @@ const CreateEventScreen = ({ navigation, route }) => {
           isTimePicker={false}
           label="Starting Date"
           placeholder={date}
+          value={eventId ? date : undefined}
           onDateChange={handleDateChange}
           error={error}
           setError={setError}
@@ -348,6 +349,7 @@ const CreateEventScreen = ({ navigation, route }) => {
               isTimePicker={true}
               label="Starting Time"
               placeholder={startingTime}
+              value={eventId ? startingTime : undefined}
               onTimeChange={(value) => handleTimeChange(value, "startTime")}
               error={error}
               setError={setError}
@@ -360,6 +362,7 @@ const CreateEventScreen = ({ navigation, route }) => {
               borderColor={Colors.stroke}
               label="Ending Time"
               placeholder={endingTime}
+              value={eventId ? endingTime : undefined}
               onTimeChange={(value) => handleTimeChange(value, "endTime")}
               error={error}
               setError={setError}
