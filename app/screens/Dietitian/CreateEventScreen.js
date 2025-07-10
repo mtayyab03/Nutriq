@@ -313,6 +313,8 @@ const CreateEventScreen = ({ navigation, route }) => {
         }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        bounces={false} // ✅ disables bounce on iOS
+        overScrollMode="never" // ✅ disables overscroll glow on Android
       >
         <CommonHeader
           title={eventId ? "Manage Event" : "Create Event"}
@@ -447,6 +449,16 @@ const CreateEventScreen = ({ navigation, route }) => {
               />
             </ScrollView>
           </View>
+          <Text
+            style={{
+              color: Colors.darkgrey,
+              fontFamily: FontFamily.regular,
+              fontSize: RFPercentage(1.1),
+              marginTop: RFPercentage(0.5),
+            }}
+          >
+            Hint: Type an email and press space, or select multiple contacts
+          </Text>
         </View>
 
         {/* notification */}
@@ -593,7 +605,7 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: RFPercentage(13),
+    marginTop: RFPercentage(10),
   },
   textInput: {
     minWidth: RFPercentage(34),

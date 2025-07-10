@@ -213,9 +213,12 @@ const ExistingContactsScreen = ({ navigation }) => {
               </TouchableOpacity>
             ))}
         </View>
+
+        {/* Filter Icon - always on top */}
+
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() => setIsModalVisible(true)}
+          onPress={() => setIsModalVisible((prev) => !prev)}
         >
           <Ionicons color={Colors.blacky} size={28} name={"filter"} />
         </TouchableOpacity>
@@ -310,7 +313,8 @@ const ExistingContactsScreen = ({ navigation }) => {
         style={{
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: null,
+          backgroundColor: "transparent", // ensure no opaque background
+          zIndex: 1,
         }}
         RecStyle={{
           width: "40%",
@@ -321,6 +325,15 @@ const ExistingContactsScreen = ({ navigation }) => {
           right: RFPercentage(2),
         }}
       >
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => {
+            setIsModalVisible(false);
+          }}
+          style={{ width: "100%", alignItems: "flex-end" }}
+        >
+          <Ionicons color={Colors.blacky} size={20} name={"close"} />
+        </TouchableOpacity>
         {filters
           .filter((f) => f.type === "sort")
           .map((filter) => (

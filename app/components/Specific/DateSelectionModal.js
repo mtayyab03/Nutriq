@@ -22,6 +22,14 @@ const DateSelectionModal = ({
   plans,
   onSelectDate,
 }) => {
+  const formatDate = (dateStr) => {
+    if (!dateStr || typeof dateStr !== "string" || !dateStr.includes("-")) {
+      return "null";
+    }
+    const [year, month, day] = dateStr.split("-");
+    return `${day}-${month}-${year}`;
+  };
+
   return (
     <AppModal
       modalVisible={visible}
@@ -72,7 +80,7 @@ const DateSelectionModal = ({
               fontSize: RFPercentage(1.5),
             }}
           >
-            {plan.startingDate}
+            {formatDate(plan.startingDate)}
           </Text>
         </TouchableOpacity>
       ))}

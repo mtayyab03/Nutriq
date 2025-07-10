@@ -508,7 +508,9 @@ const CalendarEvent = ({ route }) => {
                 fontFamily: FontFamily.medium,
               }}
             >
-              No events found for "{searchQuery}"
+              {searchQuery
+                ? `No events found : "${searchQuery}"`
+                : "No events found"}
             </Text>
           )}
         </ScrollView>

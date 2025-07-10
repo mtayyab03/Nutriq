@@ -101,19 +101,21 @@ const HomeScreen = () => {
 
             const formattedPlans = mealPlans.map((plan) => ({
               id: plan.id,
-              startingDate: new Date(plan.startingDate)
-                .toISOString()
-                .split("T")[0],
-              endingDate: new Date(plan.endingDate).toISOString().split("T")[0],
+              startingDate: plan.startingDate
+                ? new Date(plan.startingDate).toISOString().split("T")[0]
+                : null,
+              endingDate: plan.endingDate
+                ? new Date(plan.endingDate).toISOString().split("T")[0]
+                : null,
             }));
 
             setAllMealPlans(formattedPlans);
 
             // Select first plan by default
             const firstPlan = formattedPlans[0];
-            setStartingDate(firstPlan.startingDate);
-            setEndingDate(firstPlan.endingDate);
-            setFirstPlanId(firstPlan.id);
+            setStartingDate(firstPlan?.startingDate ?? null);
+            setEndingDate(firstPlan?.endingDate ?? null);
+            setFirstPlanId(firstPlan?.id ?? null);
 
             // Fetch meals for first plan
             const response = await apiClient.get(
@@ -185,6 +187,11 @@ const HomeScreen = () => {
   const missingDays = daysOfWeek.filter(
     (day) => !availableDays.includes(day.toUpperCase())
   );
+
+  const formatDate = (dateStr) => {
+    const [year, month, day] = dateStr.split("-");
+    return `${day}-${month}-${year}`;
+  };
 
   return (
     <Screen style={styles.screen}>
@@ -275,7 +282,9 @@ const HomeScreen = () => {
                 fontSize: RFPercentage(1.4),
               }}
             >
-              {startingDate}
+              {startingDate && startingDate.includes("-")
+                ? formatDate(startingDate)
+                : "DD-MM-YYYY"}
             </Text>
             <TouchableOpacity activeOpacity={0.7} style={styles.calendarIcon}>
               <MaterialIcons
@@ -287,7 +296,8 @@ const HomeScreen = () => {
           </View>
         </TouchableOpacity>
 
-        {endingDate ? (
+        {(endingDate !== null ||
+          (startingDate === null && endingDate === null)) && (
           <TouchableOpacity
             activeOpacity={0.7}
             style={{ width: "48%", marginTop: RFPercentage(1) }}
@@ -301,7 +311,9 @@ const HomeScreen = () => {
                   fontSize: RFPercentage(1.4),
                 }}
               >
-                {endingDate}
+                {startingDate && startingDate.includes("-")
+                  ? formatDate(endingDate)
+                  : "DD-MM-YYYY"}
               </Text>
               <TouchableOpacity activeOpacity={0.7} style={styles.calendarIcon}>
                 <MaterialIcons
@@ -312,7 +324,7 @@ const HomeScreen = () => {
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
-        ) : null}
+        )}
       </View>
 
       <MealDef />
