@@ -50,6 +50,10 @@ const CalendarEvent = ({ route }) => {
   const [weekDays, setWeekDays] = useState([]);
   const scrollRef = useRef(null);
   const sectionRefs = useRef({});
+  const weekdayScrollRef = useRef(null);
+  const weekdayItemRefs = useRef({});
+  const lastFetchedDateRef = useRef(null); // ✅ Use for tracking the last fetched day
+
   const [currentWeekStart, setCurrentWeekStart] = useState(
     moment().startOf("week")
   );
@@ -97,7 +101,38 @@ const CalendarEvent = ({ route }) => {
     setWeekDays(days);
     setSelectedDayIndex(defaultSelectedIndex);
     setSelectedDayDate(selectedDate);
-    fetchNextNDaysEvents(selectedDate, 5, selectedDate, true);
+    fetchNextNDaysEvents(selectedDate, 2, selectedDate, true);
+  };
+
+  const handleWeekUpdate = (newDateStr) => {
+    const newDate = moment(newDateStr);
+    const newStartOfWeek = moment(newDate).startOf("week");
+
+    if (!newStartOfWeek.isSame(currentWeekStart, "week")) {
+      const days = Array.from({ length: 7 }, (_, i) => {
+        const date = moment(newStartOfWeek).add(i, "days");
+        return {
+          date,
+          day: date.format("D"),
+          weekday: date.format("ddd"),
+        };
+      });
+
+      setCurrentWeekStart(newStartOfWeek);
+      setWeekDays(days);
+
+      const newIndex = days.findIndex((d) =>
+        d.date.isSame(moment(newDateStr), "day")
+      );
+      setSelectedDayIndex(newIndex);
+    } else {
+      const index = weekDays.findIndex((d) =>
+        d.date.isSame(moment(newDateStr), "day")
+      );
+      if (index !== -1) setSelectedDayIndex(index);
+    }
+
+    setSelectedDayDate(newDateStr);
   };
 
   // Handles initial load and when selectedDate from route.params changes
@@ -121,26 +156,34 @@ const CalendarEvent = ({ route }) => {
 
     setWeekDays(days);
     setSelectedDayIndex(index);
-    setSelectedDayDate(moment(currentDate).format("YYYY-MM-DD"));
-
-    // Also fetch fresh events whenever selected date changes from route
-    fetchNextNDaysEvents(currentDate, 5, currentDate, true);
+    const formattedDate = moment(currentDate).format("YYYY-MM-DD");
+    setSelectedDayDate(formattedDate);
+    lastFetchedDateRef.current = moment(formattedDate)
+      .subtract(1, "day")
+      .format("YYYY-MM-DD"); // So first fetch starts at currentDate
+    fetchNextNDaysEvents(formattedDate, 2, formattedDate, true);
   }, [route.params?.selectedDate]);
 
   useEffect(() => {
     const initialDate = selectedDate || moment().format("YYYY-MM-DD");
     setSelectedDayDate(initialDate);
-    fetchNextNDaysEvents(initialDate, 5, initialDate, true); // ← reset
+    fetchNextNDaysEvents(initialDate, 2, initialDate, true); // ← reset
   }, []);
 
   const fetchNextNDaysEvents = async (
     startDate,
-    daysToFetch = 5,
+    daysToFetch = 2,
     scrollToDate = null,
-    shouldReset = false
+    shouldReset = false,
+    allowEmptyReturn = false
   ) => {
-    if (!initialLoadDone) setIsLoading(true); // ✅ Only on initial fetch
+    if (!initialLoadDone) setIsLoading(true); // ✅ Show loading only on first fetch
+
     try {
+      console.log(
+        `🔄 Fetching ${daysToFetch} day(s) starting from:`,
+        startDate
+      );
       const eventPromises = [];
 
       for (let i = 0; i < daysToFetch; i++) {
@@ -155,7 +198,9 @@ const CalendarEvent = ({ route }) => {
           const date = moment(startDate)
             .add(index, "days")
             .format("YYYY-MM-DD");
+
           if (res.status === 200 && res.data.length > 0) {
+            console.log(`✅ Events found for ${date}:`, res.data);
             return { date, events: res.data };
           } else {
             return null;
@@ -163,6 +208,15 @@ const CalendarEvent = ({ route }) => {
         })
         .filter(Boolean);
 
+      // ✅ If no events and not allowed, stop here
+      if (fetchedData.length === 0 && !allowEmptyReturn) {
+        console.log(
+          "⚠️ No events found and empty return not allowed. Skipping."
+        );
+        return [];
+      }
+
+      // ✅ Update state with new event data
       setAllEventsByDate((prev) => {
         const existingDates = shouldReset
           ? new Set()
@@ -174,20 +228,23 @@ const CalendarEvent = ({ route }) => {
         );
 
         const merged = [...combined, ...newUniqueData];
-
-        // Sort by date ascending
         merged.sort((a, b) => moment(a.date).diff(moment(b.date)));
-
+        console.log("🧩 Merged events:", merged);
         return merged;
       });
 
-      if (shouldReset) {
-        setLoadedDays(daysToFetch);
-      } else {
-        setLoadedDays((prev) => prev + daysToFetch);
+      // ✅ Update UI only if we received data
+      if (fetchedData.length > 0) {
+        if (shouldReset) {
+          setSelectedDayDate(startDate);
+        } else {
+          setLoadedDays((prev) => prev + daysToFetch);
+        }
+
+        handleWeekUpdate(startDate);
       }
 
-      // Scroll to selected section
+      // ✅ Scroll to the newly loaded section
       setTimeout(() => {
         if (scrollRef.current && sectionRefs.current[scrollToDate]) {
           sectionRefs.current[scrollToDate].measureLayout(
@@ -201,18 +258,26 @@ const CalendarEvent = ({ route }) => {
           );
         }
       }, 300);
+      const lastFetched = moment(startDate).add(daysToFetch - 1, "days");
+      lastFetchedDateRef.current = lastFetched.format("YYYY-MM-DD");
+      return fetchedData; // ✅ Return for caller to inspect
     } catch (err) {
       console.error("Failed to fetch events:", err);
+      return [];
     } finally {
       if (!initialLoadDone) {
-        setIsLoading(false); // ✅ Only stop loading after initial fetch
-        setInitialLoadDone(true); // ✅ Mark initial fetch complete
+        setIsLoading(false); // ✅ End loading spinner
+        setInitialLoadDone(true); // ✅ First load done
       }
     }
   };
   useEffect(() => {
+    console.log("📅 Events to render (filtered):", filteredEventsByDate);
+  }, [filteredEventsByDate]);
+
+  useEffect(() => {
     if (route.params?.refresh) {
-      fetchNextNDaysEvents(selectedDayDate, 5, selectedDayDate, true);
+      fetchNextNDaysEvents(selectedDayDate, 2, selectedDayDate, true);
       navigation.setParams({ refresh: false });
     }
   }, [route.params?.refresh]);
@@ -334,16 +399,23 @@ const CalendarEvent = ({ route }) => {
 
       {/* scroll date */}
 
-      <View
-        {...panResponder.panHandlers}
-        style={{
-          width: "90%",
-          marginTop: isSearchVisible ? RFPercentage(1.1) : RFPercentage(3),
-          flexDirection: "row",
+      <ScrollView
+        ref={weekdayScrollRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
           alignItems: "center",
-          justifyContent: "space-between",
-          // backgroundColor: Colors.brown,
+          justifyContent: "center",
+          paddingRight: RFPercentage(3),
+          paddingLeft: RFPercentage(2.5),
         }}
+        style={{
+          width: "100%",
+          flexGrow: 0,
+          flexShrink: 0,
+          marginTop: isSearchVisible ? RFPercentage(1.1) : RFPercentage(3),
+        }}
+        {...panResponder.panHandlers}
       >
         {weekDays.map((item, index) => {
           const isSelected = selectedDayIndex === index;
@@ -356,7 +428,7 @@ const CalendarEvent = ({ route }) => {
                 borderRadius: RFPercentage(1.8),
                 alignItems: "center",
                 justifyContent: "center",
-                minWidth: RFPercentage(5),
+                minWidth: RFPercentage(5.6),
               }}
             >
               <Text
@@ -390,7 +462,7 @@ const CalendarEvent = ({ route }) => {
                 setSelectedDayDate(selected);
 
                 // Reset and refetch starting from new selected date
-                fetchNextNDaysEvents(selected, 5, selected, true);
+                fetchNextNDaysEvents(selected, 2, selected, true);
               }}
               style={{
                 marginRight: RFPercentage(1.1),
@@ -422,7 +494,7 @@ const CalendarEvent = ({ route }) => {
             </TouchableOpacity>
           );
         })}
-      </View>
+      </ScrollView>
 
       <View
         style={{
@@ -438,26 +510,50 @@ const CalendarEvent = ({ route }) => {
         <AppLoading />
       ) : (
         <ScrollView
-          style={{ width: "100%", flexGrow: 1 }}
+          style={{ width: "100%", flex: 1 }}
           contentContainerStyle={{
             alignItems: "center",
             justifyContent: "center",
             paddingBottom: RFPercentage(8),
           }}
           showsVerticalScrollIndicator={false}
-          onScroll={({ nativeEvent }) => {
+          onScroll={async ({ nativeEvent }) => {
             const bottomReached =
               nativeEvent.layoutMeasurement.height +
                 nativeEvent.contentOffset.y >=
               nativeEvent.contentSize.height - 20;
+
             if (bottomReached) {
-              const nextDate = moment(selectedDayDate)
-                .add(loadedDays, "days")
+              let found = false;
+              let maxTries = 7;
+
+              let tryDate = moment(
+                lastFetchedDateRef.current || selectedDayDate
+              )
+                .add(1, "day")
                 .format("YYYY-MM-DD");
-              fetchNextNDaysEvents(nextDate, 5);
+
+              while (!found && maxTries > 0) {
+                const result = await fetchNextNDaysEvents(
+                  tryDate,
+                  1,
+                  tryDate,
+                  false,
+                  true
+                );
+
+                if (result?.length > 0) {
+                  setSelectedDayDate(tryDate);
+                  handleWeekUpdate(tryDate);
+                  found = true;
+                } else {
+                  tryDate = moment(tryDate).add(1, "day").format("YYYY-MM-DD");
+                  maxTries--;
+                }
+              }
             }
           }}
-          scrollEventThrottle={400}
+          // scrollEventThrottle={400}
         >
           {filteredEventsByDate.length > 0 ? (
             filteredEventsByDate.map(({ date, events }) => (

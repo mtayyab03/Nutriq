@@ -238,6 +238,7 @@ const DiscoverScreen = ({ navigation }) => {
               borderRadius: RFPercentage(1),
               alignItems: "center",
               marginVertical: RFPercentage(0.5),
+              overflow: "hidden",
             }}
           >
             {item.image && (
@@ -380,7 +381,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     width: "100%",
-    // paddingBottom: RFPercentage(5),
+    paddingBottom: RFPercentage(2),
     alignItems: "center",
     justifyContent: "center",
   },

@@ -18,11 +18,17 @@ import { FontFamily } from "../../config/font";
 
 const RecipieScreen = ({ navigation, route }) => {
   const { recipeId, companyId, imageRecipe } = route.params;
+  console.log("Recipe", recipeId);
+  console.log("companyRecipe", companyId);
+  console.log("imageRecipe", imageRecipe);
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const fetchRecipe = async () => {
       try {
+        console.log("Recipe", recipeId);
+        console.log("companyRecipe", companyId);
+        console.log("imageRecipe", imageRecipe);
         const response = await apiClient.get(
           `/client/company/${companyId}/recipes/${recipeId}`
         );
